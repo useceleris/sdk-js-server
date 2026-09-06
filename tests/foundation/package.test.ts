@@ -29,7 +29,7 @@ describe("package contents", () => {
     );
     expect(manifest.name).toBe("@useceleris/server");
     expect(manifest.private).toBe(true);
-    expect(manifest.dependencies ?? {}).toEqual({});
+    expect(Object.keys(manifest.dependencies ?? {})).toEqual(["zod"]);
     expect(manifest.peerDependencies ?? {}).toEqual({});
   });
 });

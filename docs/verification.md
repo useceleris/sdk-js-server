@@ -76,3 +76,21 @@ Readability review covered all three new source modules, both validation suites,
 ## CI simplification
 
 2026-09-06: replaced the version/OS jobs and inline runtime-selection script with one Linux job: checkout, Node 24/Bun/Deno setup, npm install and npm run test. Actions use major tags, including checkout@v7 and setup-node@v7. Removed audit, metadata-diff and aggregate-check steps from CI as requested. Full version/OS qualification remains separate; prior evidence is historical. Reviewed the complete workflow and runtime-support wording for readability and obsolete requirements. GitHub execution remains pending.
+
+## Zod validation migration
+
+2026-09-06: installed Zod 4.5.4 through `npm install --save-exact zod@latest`; npm generated the manifest and lockfile changes. Installed metadata reports MIT licensing, ESM/CommonJS entrypoints, no runtime dependencies and no declared engine constraint. npm audited 67 packages with zero reported vulnerabilities. No existing dependency version changed.
+
+Replaced manual validators with internal discriminated schemas and duplicate refinements. Synchronous parsing strips extra fields and isolates nested claims; explicit mapping preserves TokenPayload and TokenPermission. Fixed Configuration messages omit raw Zod errors and causes. Removed superseded helpers and redundant character checks. No public exports, signer or CI changes.
+
+Final `npm run test` passed 111 tests in six suites (8.04 seconds): 94 validation cases on Node 24.13.0/macOS arm64 and 17 foundation checks using the same eight runtime versions recorded in S2. Build, typecheck, formatting and diff checks passed. TypeScript 7 experimental build warning remains. The empty entrypoint does not execute Zod in runtime consumers; these imports are not full cross-runtime validation/signing qualification.
+
+Reviewed complete validation source, package dependency assertion, npm-generated metadata, README, contract, runtime guidance and S2 tracker edits for readability and unnecessary code. Existing behavior tests and grouped fixtures remain intact; no Zod-only tests, generic schema wrappers or error-formatting framework added. Earlier zero-dependency evidence describes the historical foundation only.
+
+## Schema-derived types and naming
+
+2026-09-06: moved schemas into claims.ts and replaced all handwritten claims/token interfaces and unions with Zod-derived types. Shared permission fields, integer bounds and identifier schemas remove duplicated validation definitions. Built-in patterns replace character refinements; only uniqueness uses custom refinements. Renamed payload preparation and all callers to prepareTokenPayload. No dependencies, public exports or CI changes in this refactor.
+
+Final verification: 112 tests across seven suites passed (5.66 seconds), including 95 validation/schema cases on the development host and the unchanged 17 foundation checks with the eight-runtime matrix recorded above. Build, typecheck, formatting and diff checks passed. An initial typecheck caught a caller fixture annotated readonly; changed it to satisfies SigningClaims so the test can demonstrate mutation of the original caller array. Parsed defaults, readonly types, frozen parsed copies and unchanged caller ownership are verified. Full signer runtime qualification remains pending.
+
+Reviewed claims.ts, validation.ts, all three validation suites, AGENTS.md and contract/evidence changes for descriptive names, unnecessary code, safe error handling and schema duplication. Removed handwritten data shapes and duplicate schema declarations; no generic validation wrapper or redundant payload parse added. Existing source/spec revisions and open release findings remain as recorded above.

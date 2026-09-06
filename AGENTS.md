@@ -30,3 +30,7 @@ Review every changed file, including fixtures, helpers, configuration and CI. Do
 ## Test scope
 
 Every test must identify package-owned behavior or a defect in this package it can catch. Keep installed imports, side effects, export/type boundaries, dependencies and portability checks. Do not test build-tool cleanup, runtime version comparison or standalone Web Crypto/UTF-8/AbortController behavior. Tools may build or execute our package as setup, but are not the subjects under test. Future signing tests must call our signer rather than only exercising crypto primitives. Remove unused fixtures and helpers when removing a test.
+
+## Schemas and naming
+
+Use descriptive domain names for functions, schemas and parsed values (for example, `prepareTokenPayload` and `parsedClaims`). Define schema-backed data shapes once in Zod and derive types with `z.input` or `z.infer`; do not duplicate them in handwritten interfaces or unions. Prefer supported Zod validators, defaults and object composition over custom checks. Reserve refinements for domain rules such as uniqueness. Parse once at the input boundary, keep token mapping explicit, and never expose raw validation errors or input values.

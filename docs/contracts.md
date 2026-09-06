@@ -13,37 +13,10 @@ Dependency direction is server → client. No client dependency in S0–S3. S4 u
 ## Future public API
 
 ```ts
-type ChannelScope =
-  | { readonly kind: "restricted"; readonly references: readonly string[] }
-  | { readonly kind: "all" };
-type SegmentPermissions =
-  | {
-      readonly kind: "restricted";
-      readonly segments: readonly {
-        segmentId: string;
-        read: boolean;
-        write: boolean;
-      }[];
-    }
-  | { readonly kind: "all"; readonly read: boolean; readonly write: boolean };
-interface SigningClaims {
-  readonly channels: ChannelScope;
-  readonly permissions: SegmentPermissions;
-  readonly reference?: string;
-  readonly replay?: boolean | { readonly lookbackMs: number };
-  readonly allowEcho?: boolean;
-}
-interface SignedCredentials {
-  readonly payload: string;
-  readonly signature: string;
-}
-interface CredentialContext {
-  readonly channelReference: string;
-  readonly signal: AbortSignal;
-}
-type CredentialProvider = (
-  context: CredentialContext,
-) => Promise<SignedCredentials>;
+// Internal schemas are the source of truth in src/claims.ts.
+type SigningClaims = z.input<typeof signingClaimsSchema>;
+type TokenPermission = z.infer<typeof tokenPermissionSchema>;
+type TokenPayload = z.infer<typeof tokenPayloadSchema>;
 // Future API only:
 // createSigner({ clientId, signingSecret, crypto?, clock? }) -> Signer
 // Signer.sign(claims, { signal? }) -> Promise<SignedCredentials>
@@ -53,7 +26,7 @@ type CredentialProvider = (
 
 Restricted channel references must be nonempty, unique, and satisfy server channel syntax/UTF-8 byte bounds. Restricted segment lists may be empty to grant no permissions; duplicates and empty identifiers are rejected. All-scope requires the explicit `kind: "all"` branch. CR/LF in identifiers is invalid. Do not trim, normalize or broaden claims. `reference` omitted permits server-generated identity; present value must be nonempty and CR/LF-free. Deep-copy inputs before asynchronous work so caller mutation cannot change signed permissions.
 
-Clock output must be a finite nonnegative safe integer, within the SDK-supported UTC year 1970–9999 range (`0..253402300799999` milliseconds); no silent rounding/backdating. Numeric replay uses integer `0..4294967295`, encoded as JSON number. Wire i64 message fields belong to the client and use bigint; JSON signing timestamps do not use lossy bigint conversion. Replay and echo default false and are emitted explicitly. Public inputs use camelCase; wire JSON uses timestamp, reference, channel_references, token_permission, replay, allow_echo. Restricted segment entries map segmentId to segment_id. All channels maps channel_references to null, only via explicit all-scope.
+Clock output must be a finite positive safe integer, within the SDK-supported UTC year 1970–9999 range (`1..253402300799999` milliseconds); no silent rounding/backdating. Numeric replay uses integer `0..4294967295`, encoded as JSON number. Wire i64 message fields belong to the client and use bigint; JSON signing timestamps do not use lossy bigint conversion. Replay and echo default false and are emitted explicitly. Public inputs use camelCase; wire JSON uses timestamp, reference, channel_references, token_permission, replay, allow_echo. Restricted segment entries map segmentId to segment_id. All channels maps channel_references to null, only via explicit all-scope.
 
 Serialize one UTF-8 JSON payload, standard padded Base64 it, HMAC-SHA512 the exact Base64 string, encode lowercase digest hex, then standard padded Base64 of `clientId + ":" + digestHex`. Reject colon/CR/LF in clientId and empty credentials. Never use client_secret as signing_secret. Return opaque credentials, not a constructed URL or claimed expiry time. Preserve serialized bytes; the verifier does not require canonical JSON key order.
 
@@ -78,3 +51,7 @@ These are source observations, not executed exploit tests. They do not prevent S
 ## S2 internal implementation
 
 Claims types and copied wire-payload preparation now exist internally; the package entrypoint still exports nothing. Configuration errors use `code: "Configuration"`, fixed field-specific messages and no raw causes. Optional undefined values follow omitted defaults; null is rejected. Extra fields are excluded from output. Clock exceptions become safe Configuration errors. Signing and client provider APIs remain future work.
+
+Validation uses internal Zod schemas with synchronous parsing, unknown-field stripping and explicit token payload mapping. Raw Zod issues never cross the error boundary; public types remain independent of Zod.
+
+Schema-backed claims and token types are inferred from Zod; no parallel handwritten interfaces are maintained. `prepareTokenPayload` validates claims once, validates the clock and maps token fields explicitly. Readonly schemas freeze parsed copies, including nested arrays and permission objects, without freezing caller inputs. The constructed token payload has a readonly type but is not promised to be deeply frozen. Future signed credentials remain a readonly payload/signature pair; the credential provider still receives channelReference and AbortSignal.

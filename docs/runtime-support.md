@@ -25,7 +25,7 @@ CI runs one Linux job with the default three-runtime selection. Minimum-version 
 
 Build uses the tsdown CLI directly, with no custom build script. tsdown was added using `npm install --save-dev --save-exact tsdown@latest`.
 
-Initial install: `npm install --save-dev --save-exact typescript@latest vitest@latest prettier@latest @types/node@latest`. npm resolves versions and writes package metadata; committed lockfile preserves that selection. Restore with npm install and check metadata has not changed. Do not manually edit dependency versions. Additional packages require actual need and the same latest-stable installation/review policy. No runtime dependencies exist in S1.
+Initial install: `npm install --save-dev --save-exact typescript@latest vitest@latest prettier@latest @types/node@latest`. npm resolves versions and writes package metadata; committed lockfile preserves that selection. Restore with npm install and check metadata has not changed. Do not manually edit dependency versions. Additional packages require actual need and the same latest-stable installation/review policy. S1 originally had no runtime dependencies. S2 validation now uses Zod, installed through `npm install --save-exact zod@latest`.
 
 ## Official references
 

@@ -4,7 +4,7 @@ Portable Celeris server SDK foundation. **Not a usable signer yet.** The package
 
 ## Development
 
-Use npm and a supported development Node release (Node 24 recommended). Install dependencies using `npm install`; new dependencies use `npm install --save-dev --save-exact name@latest`. Commit npm-generated dependency metadata and lockfile.
+Use npm and a supported development Node release (Node 24 recommended). Install dependencies using `npm install`; new development dependencies use `npm install --save-dev --save-exact name@latest`; authorized runtime dependencies use `npm install --save-exact name@latest`. Zod is the sole runtime dependency, used for internal validation. Commit npm-generated dependency metadata and lockfile.
 
 ```sh
 npm install
