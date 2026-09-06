@@ -29,4 +29,4 @@ Record this review beside test evidence before marking work complete. There is n
 
 ## Current test layout
 
-Package contents, declaration consumers, production portability and runtime behavior live in separate test suites. Test-only helpers own command execution, isolated package setup and runtime matrix selection. Fixtures remain authored `.ts` files compiled into disposable consumers by tsdown CLI. Suites run serially because clean builds share the repository's dist directory.
+Group related suites by concern: `tests/foundation/` contains package, declaration, portability and runtime checks; `tests/validation/` contains claims and validation unit tests. Shared helpers and fixtures remain in `tests/helpers/` and `tests/fixtures/`. Test-only helpers own command execution, isolated package setup and runtime matrix selection. Fixtures remain authored `.ts` files compiled into disposable consumers by tsdown CLI. Suites run serially because clean builds share the repository's dist directory.

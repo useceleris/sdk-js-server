@@ -74,3 +74,7 @@ The future S4 provider gets fresh claims/timestamp per connection attempt, valid
 | D-003   | [Peer output](../../../celeris-realtime/app/src/server_to_client_message/peer_message.rs) emits identifiers as SimpleString; payload reference validates minimum length only | Open server security gate; local rejection cannot protect against hostile peers bypassing SDK |
 
 These are source observations, not executed exploit tests. They do not prevent S1 packaging tests. No source repository was changed. S0 remains pending client agreement; S1 may proceed against this recorded boundary.
+
+## S2 internal implementation
+
+Claims types and copied wire-payload preparation now exist internally; the package entrypoint still exports nothing. Configuration errors use `code: "Configuration"`, fixed field-specific messages and no raw causes. Optional undefined values follow omitted defaults; null is rejected. Extra fields are excluded from output. Clock exceptions become safe Configuration errors. Signing and client provider APIs remain future work.

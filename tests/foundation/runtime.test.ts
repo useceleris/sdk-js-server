@@ -2,8 +2,8 @@ import { beforeAll, describe, expect, test } from "vitest";
 import {
   compileConsumers,
   usePackageFixture,
-} from "./helpers/package-fixture.js";
-import { readRuntimeMatrix, runConsumer } from "./helpers/runtimes.js";
+} from "../helpers/package-fixture.js";
+import { readRuntimeMatrix, runConsumer } from "../helpers/runtimes.js";
 
 const getFixture = usePackageFixture();
 

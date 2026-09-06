@@ -1,8 +1,8 @@
 import { expect, test } from "vitest";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { repositoryRoot, runCommand } from "./helpers/commands.js";
-import { usePackageFixture } from "./helpers/package-fixture.js";
+import { repositoryRoot, runCommand } from "../helpers/commands.js";
+import { usePackageFixture } from "../helpers/package-fixture.js";
 
 const getFixture = usePackageFixture();
 const consumerModes = [

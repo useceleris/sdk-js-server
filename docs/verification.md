@@ -62,3 +62,17 @@ After these changes: 34 tests passed across four suites and eight runtime versio
 Earlier 34-test counts include standalone capability probes, runtime-version assertions and a tsdown cleanup test. Those results are retained above as historical evidence, not current requirements. These out-of-scope tests and their unused fixture/helper code have been removed. The current suite checks package contents, installed imports and side effects, private exports, declaration resolution, dependency constraints and production portability.
 
 Current validation after scope cleanup: `npm run test` with the existing eight-runtime matrix passed **17 tests across four suites** on macOS arm64. This replaces the earlier 34-test suite for ongoing validation. Typechecks passed; no production code or dependency metadata changed. Reviewed the remaining consumers/import guard, runtime selector, package fixture setup, and package/runtime assertions for readability and orphaned code. Cross-OS CI remains pending.
+
+## S2 validation
+
+2026-09-06: internal claims validation and payload preparation completed against server `9b67cb6634a9c24754e75df25e2cbc2df1b26f26`, specs `d51738c0fe6aff5fa6d2fecc0bb8efb4169bbddf`, and package base `4618c665afdfa72ae243b86af89876ded08bf6e7` plus this working-tree change. Source revisions match the inspected S2 tracker evidence. No server/spec files changed.
+
+`npm run test` passed **111 tests in six suites** (6.91 seconds), with **94 Node-hosted validation unit cases** and the existing **17 foundation checks**. Foundation consumers exercised Node 22.15.0, 22.23.2, 24.20.0, 26.8.1; Bun 1.3.0, 1.4.2; Deno 2.5.0, 2.9.6. Host: macOS arm64, Node 24.13.0. Matrix supplied through CELERIS_RUNTIME_MATRIX using the existing isolated runtime installations. Import results do not qualify internal validation across runtimes; full signer qualification remains S3/S6.
+
+Build, production/tooling typechecks, formatting and diff checks passed. Existing TypeScript 7 experimental API warning remains. No dependencies, public exports or signing implementation added. Initial typecheck exposed array-valued Vitest table argument handling; corrected the tables and reran all checks.
+
+Readability review covered all three new source modules, both validation suites, the four relocated foundation suites and changed documentation. Foundation suites moved to `tests/foundation/`; validation suites live in `tests/validation/`. Foundation changes only adjust helper import paths. Shared fixtures/helpers remain unchanged. Reviewed explicit control flow, descriptive names, independent expected payloads, safe errors and ownership copying; no generic schema framework, cloning utility or new fixture infrastructure was necessary. S0 client agreement, S1 cross-OS evidence and D-001–D-003 remain open; S3–S8 remain unchecked.
+
+## CI simplification
+
+2026-09-06: replaced the version/OS jobs and inline runtime-selection script with one Linux job: checkout, Node 24/Bun/Deno setup, npm install and npm run test. Actions use major tags, including checkout@v7 and setup-node@v7. Removed audit, metadata-diff and aggregate-check steps from CI as requested. Full version/OS qualification remains separate; prior evidence is historical. Reviewed the complete workflow and runtime-support wording for readability and obsolete requirements. GitHub execution remains pending.

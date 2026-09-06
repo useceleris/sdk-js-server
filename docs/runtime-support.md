@@ -7,19 +7,19 @@ This records compatibility targets, not universal JavaScript compatibility. S1 c
 | SDK consumer floors       | Node 22.15.0, Bun 1.3.0, Deno 2.5.0                                                                     |
 | Additional consumer tests | Current Node 22/24/26 lines, current stable Bun/Deno                                                    |
 | Development host          | Node supported by installed Vitest; Node 24.11+ recommended; tsdown requires ^22.18.0 / ^24.11.0 / >=26 |
-| CI operating systems      | Linux full matrix; current Node Windows/macOS smoke checks                                              |
+| CI operating systems      | Linux test job; full version matrix and Windows/macOS qualification remain separate                     |
 
 Production compilation uses ES2022 and DOM standard API types, with `types: []`. Node types are limited to test/tooling configuration. Required future signing capabilities: SubtleCrypto importKey/sign with HMAC-SHA512, TextEncoder, Uint8Array, AbortSignal. Realtime capabilities belong to the client; signing alone does not require WebSocket. No ambient Bun/Deno/Node-specific APIs enter public types.
 
 ## Test matrix selection
 
-Vitest runs on the development Node host. Set CELERIS_RUNTIME_MATRIX to a JSON array of records with `name`, `kind` (node/bun/deno), and `command` (executable path). It launches each runtime as a child process and asserts actual package-consumer results. Default matrix uses current Node plus `bun` and `deno` on PATH. Missing executables fail package execution and are never skipped. CI selects runtime versions; the test suite does not implement or test version comparison.
+Vitest runs on the development Node host. Set CELERIS_RUNTIME_MATRIX to a JSON array of records with `name`, `kind` (node/bun/deno), and `command` (executable path). It launches each runtime as a child process and asserts actual package-consumer results. Default matrix uses current Node plus `bun` and `deno` on PATH. Missing executables fail package execution and are never skipped. CI installs Node 24 and current Bun/Deno; the test suite does not implement or test version comparison.
 
 ```sh
 CELERIS_RUNTIME_MATRIX='[{"name":"node","kind":"node","command":"node"},{"name":"bun","kind":"bun","command":"bun"},{"name":"deno","kind":"deno","command":"deno"}]' npm test
 ```
 
-CI selects runtime jobs explicitly; a one-runtime job is partial qualification, and all required jobs must pass. ESM is executed in every runtime; CJS additionally in Node/Bun. NodeNext ESM/CJS and bundler-resolution declaration consumers run with the installed latest TypeScript. Use isolated runtime downloads/install locations; do not modify global installations for tests.
+CI runs one Linux job with the default three-runtime selection. Minimum-version and cross-OS qualification remain separate; this job does not establish the full support matrix. ESM is executed in every runtime; CJS additionally in Node/Bun. NodeNext ESM/CJS and bundler-resolution declaration consumers run with the installed latest TypeScript. Use isolated runtime downloads/install locations; do not modify global installations for tests.
 
 ## Dependency policy
 

@@ -1,8 +1,8 @@
 import { describe, expect, test } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { repositoryRoot } from "./helpers/commands.js";
-import { usePackageFixture } from "./helpers/package-fixture.js";
+import { repositoryRoot } from "../helpers/commands.js";
+import { usePackageFixture } from "../helpers/package-fixture.js";
 
 const getFixture = usePackageFixture();
 const expectedFiles = [
