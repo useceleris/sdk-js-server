@@ -1,38 +1,28 @@
-for (const name of [
-  "crypto",
-  "fetch",
-  "WebSocket",
-  "setTimeout",
-  "setInterval",
-]) {
-  Object.defineProperty(globalThis, name, {
-    configurable: true,
-    get() {
-      throw new Error(`Import accessed forbidden capability: ${name}`);
-    },
-  });
-}
+import { blockImportSideEffects } from "./import-guard.js";
+
+blockImportSideEffects();
 const originalEnvironment = process.env;
 process.env = new Proxy(originalEnvironment, {
   get() {
     throw new Error("Package import read environment");
   },
 });
-let sdk;
+
+let server: object;
 try {
-  sdk = require("@useceleris/server");
+  server = require("@useceleris/server");
 } finally {
+  // Node's console needs environment access after the package import is checked.
   process.env = originalEnvironment;
 }
-if (Object.keys(sdk).length !== 0)
-  throw new Error("Unexpected foundation runtime exports");
-let blocked = false;
+
+let privatePathBlocked = false;
 try {
   require("@useceleris/server/dist/index.cjs");
 } catch {
-  blocked = true;
+  privatePathBlocked = true;
 }
-if (!blocked) throw new Error("Private path was importable");
-console.log(JSON.stringify({ imported: true, privatePathBlocked: true }));
 
-export {};
+console.log(
+  JSON.stringify({ exports: Object.keys(server), privatePathBlocked }),
+);

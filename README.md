@@ -28,5 +28,10 @@ Tests require Node, Bun and Deno. Missing executables fail qualification. See [r
 - [Server contract](docs/contracts.md)
 - [Runtime support](docs/runtime-support.md)
 - [Verification evidence](docs/verification.md)
+- [Code readability conventions](docs/code-conventions.md)
 
 Trusted-server signing secrets must never be sent to browsers or end-user applications. Supporting Web Crypto does not make an environment trusted. No license or publication approval is implied by this private scaffold.
+
+Before completing a change, run automated checks and perform the readability checklist. Test responsibilities are separated into package, declaration, portability and runtime suites; shared helpers remain test-only.
+
+Tests target package-owned behavior. Standalone runtime API probes and build-tool behavior tests are excluded; build and compiler tools are used only to prepare or consume the package.

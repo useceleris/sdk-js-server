@@ -1,6 +1,6 @@
 # Runtime support and tooling
 
-This records compatibility targets, not universal JavaScript compatibility. S1 qualifies package loading and required platform capabilities only; later stages qualify signing and realtime behavior.
+This records compatibility targets, not universal JavaScript compatibility. S1 checks package loading, exports, declarations and import side effects; later stages qualify signing and realtime behavior.
 
 | Role                      | Targets                                                                                                 |
 | ------------------------- | ------------------------------------------------------------------------------------------------------- |
@@ -13,7 +13,7 @@ Production compilation uses ES2022 and DOM standard API types, with `types: []`.
 
 ## Test matrix selection
 
-Vitest runs on the development Node host. Set CELERIS_RUNTIME_MATRIX to a JSON array of records with `name`, `kind` (node/bun/deno), and `command` (executable path). It launches each runtime as a child process and asserts actual consumer/probe results. Default matrix uses current Node plus `bun` and `deno` on PATH. Missing executables or versions below floors fail; they are never skipped.
+Vitest runs on the development Node host. Set CELERIS_RUNTIME_MATRIX to a JSON array of records with `name`, `kind` (node/bun/deno), and `command` (executable path). It launches each runtime as a child process and asserts actual package-consumer results. Default matrix uses current Node plus `bun` and `deno` on PATH. Missing executables fail package execution and are never skipped. CI selects runtime versions; the test suite does not implement or test version comparison.
 
 ```sh
 CELERIS_RUNTIME_MATRIX='[{"name":"node","kind":"node","command":"node"},{"name":"bun","kind":"bun","command":"bun"},{"name":"deno","kind":"deno","command":"deno"}]' npm test

@@ -15,7 +15,7 @@ S0 contracts and S1 foundation are now present; pending acceptance is tracked be
 ## How to track progress
 
 - Status values: **Not started**, **In progress**, **Blocked**, **Complete**. Assign an owner when a stage starts. Keep all tasks unchecked until implemented and verified.
-- Complete requires checked tasks, acceptance evidence, relevant tests and reviewed findings; listing tests or writing this document is not completion. If required evidence cannot pass, mark Blocked and link the specific finding.
+- Complete requires checked tasks, acceptance evidence, relevant tests, the [readability review](docs/code-conventions.md), and reviewed findings; listing tests or writing this document is not completion. If required evidence cannot pass, mark Blocked and link the specific finding.
 - Each evidence entry records command/check, result, package/spec/server revision, runtime/OS, date and sanitized artifact link. Record source inspection separately from executed tests.
 - Scenario ranges below refer to existing conformance IDs; include each applicable scenario. Mark inherited or inapplicable cases explicitly with justification, never silently skip them.
 - Update the stage table and its detail together; retain completed-stage evidence when later changes reopen work. Check off cross-repository prerequisites only against linked revision/results.
@@ -55,7 +55,7 @@ S0 contracts and S1 foundation are now present; pending acceptance is tracked be
 **Coverage:** SDK-09–11; LANG-01–02, SEC-01, REL-02.
 
 - [x] Configure strict TypeScript, portable declarations, ESM-first/CommonJS exports and exact package name @useceleris/server; import has no networking or environment-read side effects.
-- [ ] Create reproducible builds, checks, unit tests and CI for Node.js/Bun/Deno; select minimum versions using official capability evidence and record exact supported targets.
+- [ ] Create reproducible builds, checks, unit tests and CI for Node.js/Bun/Deno; select minimum versions from official support information and record package-consumer results for exact targets. Test this package, not standalone runtime APIs or build-tool functionality.
 - [x] Keep node: imports, Buffer, process and Node-only public types outside portable core and dependencies. Test packed @useceleris/server imports and declarations in real consumers.
 
 **Acceptance:** Portable builds and import/type checks pass on the recorded runtime matrix without requiring the client for signing tests.
