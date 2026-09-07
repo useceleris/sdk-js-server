@@ -1,4 +1,4 @@
-import { runCommand } from "./commands.js";
+import { runCommand } from "./commands";
 
 export type RuntimeKind = "node" | "bun" | "deno";
 export interface Runtime {

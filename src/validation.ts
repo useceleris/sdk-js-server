@@ -1,26 +1,9 @@
 import {
-  clientIdSchema,
-  signingSecretSchema,
   signingClaimsSchema,
   timestampSchema,
   type TokenPayload,
-} from "./claims.js";
-import { ConfigurationError } from "./configuration-error.js";
-
-export function validateSignerIdentity(
-  clientId: unknown,
-  signingSecret: unknown,
-): void {
-  if (!clientIdSchema.safeParse(clientId).success) {
-    throw new ConfigurationError(
-      "clientId must be nonempty and contain no colon or CR/LF.",
-    );
-  }
-
-  if (!signingSecretSchema.safeParse(signingSecret).success) {
-    throw new ConfigurationError("signingSecret must be a nonempty string.");
-  }
-}
+} from "./claims";
+import { ConfigurationError } from "./configuration-error";
 
 export function prepareTokenPayload(
   claims: unknown,
@@ -41,7 +24,7 @@ export function prepareTokenPayload(
         );
       case "reference":
         throw new ConfigurationError(
-          "reference must be nonempty and contain no CR/LF.",
+          "reference must be nonempty and contain no colon or CR/LF.",
         );
       case "replay":
         throw new ConfigurationError(

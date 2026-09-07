@@ -2,7 +2,7 @@ import { afterAll, beforeAll } from "vitest";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { repositoryRoot, runNpm } from "./commands.js";
+import { repositoryRoot, runNpm } from "./commands";
 
 interface PackedArtifact {
   filename: string;
@@ -54,8 +54,8 @@ export function compileConsumers(consumerDirectory: string): void {
   }
 
   // Keep imports external so consumers exercise the installed tarball.
-  compile(["consumer.ts"], "esm");
-  compile(["consumer-require.ts"], "cjs");
+  compile(["consumer.ts", "signing-consumer.ts"], "esm");
+  compile(["consumer-require.ts", "signing-consumer.ts"], "cjs");
 }
 
 function prepareFixture(temporaryDirectory: string): PackageFixture {

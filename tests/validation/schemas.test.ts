@@ -4,7 +4,7 @@ import {
   type SigningClaims,
   type TokenPayload,
   type TokenPermission,
-} from "../../src/claims.js";
+} from "../../src/claims";
 
 test("claims schemas infer optional inputs and readonly parsed defaults", () => {
   const claims = {

@@ -2,7 +2,7 @@ import { beforeAll, expect, test } from "vitest";
 import { builtinModules } from "node:module";
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
-import { repositoryRoot, runNpm } from "../helpers/commands.js";
+import { repositoryRoot, runNpm } from "../helpers/commands";
 
 function listFiles(directory: string): string[] {
   const files: string[] = [];

@@ -1,9 +1,6 @@
 import { expect, test, vi } from "vitest";
-import { ConfigurationError } from "../../src/configuration-error.js";
-import {
-  prepareTokenPayload,
-  validateSignerIdentity,
-} from "../../src/validation.js";
+import { ConfigurationError } from "../../src/configuration-error";
+import { prepareTokenPayload } from "../../src/validation";
 
 const claims = {
   channels: { kind: "all" },
@@ -96,31 +93,9 @@ test("uses Date.now when no clock supplied", () => {
   }
 });
 
-test("validates explicit signer credentials without changing them", () => {
-  expect(() =>
-    validateSignerIdentity(" client-雪 ", " secret\n "),
-  ).not.toThrow();
-});
-
-test.each(["", "a:b", "a\r", "a\n", null, undefined, 1])(
-  "rejects invalid client ID %j",
-  (clientId) => {
-    expect(() => validateSignerIdentity(clientId, "synthetic-secret")).toThrow(
-      ConfigurationError,
-    );
-  },
-);
-
-test.each(["", null, undefined, 1])("rejects invalid secret %j", (secret) => {
-  expect(() => validateSignerIdentity("client", secret)).toThrow(
-    ConfigurationError,
-  );
-});
-
 test("validation and clock errors never expose supplied values or causes", () => {
   const marker = "synthetic-sensitive-marker";
   const operations = [
-    () => validateSignerIdentity(`${marker}:`, marker),
     () => prepareTokenPayload({ ...claims, reference: `${marker}\n` }),
     () =>
       prepareTokenPayload(claims, () => {

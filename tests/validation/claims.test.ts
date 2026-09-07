@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
-import type { SigningClaims } from "../../src/claims.js";
-import { prepareTokenPayload } from "../../src/validation.js";
+import type { SigningClaims } from "../../src/claims";
+import { prepareTokenPayload } from "../../src/validation";
 
 const claims: SigningClaims = {
   channels: { kind: "restricted", references: ["room-1"] },
@@ -44,6 +44,7 @@ test.each(
     ["a".repeat(256)],
     ["é"],
     ["a_b"],
+    ["a:b"],
     ["a\n"],
     ["a\r"],
     [null],
@@ -175,3 +176,15 @@ test.each([null, undefined, [], "claims", 1].map((value) => ({ value })))(
     expect(() => prepareTokenPayload(value)).toThrow();
   },
 );
+
+test("rejects colon in user references without restricting segment colons", () => {
+  expect(() => prepareTestTokenPayload({ reference: "user:123" })).toThrow();
+  expect(
+    prepareTestTokenPayload({
+      permissions: {
+        kind: "restricted",
+        segments: [{ segmentId: "topic:part", read: true, write: false }],
+      },
+    }).token_permission,
+  ).toEqual([{ segment_id: "topic:part", read: true, write: false }]);
+});

@@ -5,11 +5,12 @@ const identifierSchema = z
   .min(1)
   .regex(/^[^\r\n]+(?![\s\S])/u);
 
-export const clientIdSchema = z
+const colonFreeIdentifierSchema = z
   .string()
   .min(1)
   .regex(/^[^:\r\n]+(?![\s\S])/u);
 
+export const clientIdSchema = colonFreeIdentifierSchema;
 export const signingSecretSchema = z.string().min(1);
 export const timestampSchema = z.int().min(1).max(253402300799999);
 
@@ -37,14 +38,9 @@ const channelScopeSchema = z
   .readonly();
 
 const permissionFields = { read: z.boolean(), write: z.boolean() };
-export const tokenPermissionSchema = z.object(permissionFields).readonly();
 const segmentClaimSchema = z
   .object({ segmentId: identifierSchema, ...permissionFields })
   .readonly();
-const tokenSegmentSchema = z
-  .object({ segment_id: identifierSchema, ...permissionFields })
-  .readonly();
-
 const segmentPermissionsSchema = z
   .discriminatedUnion("kind", [
     z.object({ kind: z.literal("all"), ...permissionFields }),
@@ -71,23 +67,9 @@ export const signingClaimsSchema = z
   .object({
     channels: channelScopeSchema,
     permissions: segmentPermissionsSchema,
-    reference: identifierSchema.optional(),
+    reference: colonFreeIdentifierSchema.optional(),
     replay: replaySchema.default(false),
     allowEcho: z.boolean().default(false),
-  })
-  .readonly();
-
-export const tokenPayloadSchema = z
-  .object({
-    timestamp: timestampSchema,
-    reference: identifierSchema.optional(),
-    channel_references: z.array(channelReferenceSchema).readonly().nullable(),
-    token_permission: z.union([
-      tokenPermissionSchema,
-      z.array(tokenSegmentSchema).readonly(),
-    ]),
-    replay: z.union([z.boolean(), lookbackSchema]),
-    allow_echo: z.boolean(),
   })
   .readonly();
 
@@ -95,5 +77,19 @@ export type ChannelScope = z.infer<typeof channelScopeSchema>;
 export type SegmentClaim = z.infer<typeof segmentClaimSchema>;
 export type SegmentPermissions = z.infer<typeof segmentPermissionsSchema>;
 export type SigningClaims = z.input<typeof signingClaimsSchema>;
-export type TokenPermission = z.infer<typeof tokenPermissionSchema>;
-export type TokenPayload = z.infer<typeof tokenPayloadSchema>;
+
+export type TokenPermission = {
+  readonly read: boolean;
+  readonly write: boolean;
+};
+
+export type TokenPayload = {
+  readonly timestamp: number;
+  readonly reference?: string;
+  readonly channel_references: readonly string[] | null;
+  readonly token_permission:
+    | TokenPermission
+    | readonly (TokenPermission & { readonly segment_id: string })[];
+  readonly replay: boolean | number;
+  readonly allow_echo: boolean;
+};

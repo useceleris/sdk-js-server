@@ -1,8 +1,8 @@
 import { expect, test } from "vitest";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { repositoryRoot, runCommand } from "../helpers/commands.js";
-import { usePackageFixture } from "../helpers/package-fixture.js";
+import { repositoryRoot, runCommand } from "../helpers/commands";
+import { usePackageFixture } from "../helpers/package-fixture";
 
 const getFixture = usePackageFixture();
 const consumerModes = [
@@ -24,7 +24,18 @@ test("latest TypeScript resolves installed ESM, CommonJS and bundler declaration
     const configuration = join(consumerDirectory, `tsconfig-${mode.name}.json`);
     writeFileSync(
       join(consumerDirectory, filename),
-      'import * as server from "@useceleris/server"; void server;\n',
+      `import { createSigner, type Signer, type SigningClaims, type SignedCredentials } from "@useceleris/server";
+const claims: SigningClaims = {
+  channels: { kind: "all" },
+  permissions: { kind: "restricted", segments: [] },
+};
+const signer: Signer = createSigner({
+  clientId: "test",
+  signingSecret: "test",
+});
+const credentials: SignedCredentials = signer.sign(claims);
+void credentials;
+`,
     );
     writeFileSync(
       configuration,

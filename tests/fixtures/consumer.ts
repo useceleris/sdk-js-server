@@ -1,4 +1,4 @@
-import { blockImportSideEffects } from "./import-guard.js";
+import { blockImportSideEffects } from "./import-guard";
 
 blockImportSideEffects();
 const server = await import("@useceleris/server");

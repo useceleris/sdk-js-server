@@ -1,6 +1,6 @@
 # Runtime support and tooling
 
-This records compatibility targets, not universal JavaScript compatibility. S1 checks package loading, exports, declarations and import side effects; later stages qualify signing and realtime behavior.
+This records compatibility targets, not universal JavaScript compatibility. S1 checks package loading, exports, declarations and import side effects; S3 additionally verifies signing vectors across the recorded runtime matrix; realtime integration remains later work.
 
 | Role                      | Targets                                                                                                 |
 | ------------------------- | ------------------------------------------------------------------------------------------------------- |
@@ -9,7 +9,7 @@ This records compatibility targets, not universal JavaScript compatibility. S1 c
 | Development host          | Node supported by installed Vitest; Node 24.11+ recommended; tsdown requires ^22.18.0 / ^24.11.0 / >=26 |
 | CI operating systems      | Linux test job; full version matrix and Windows/macOS qualification remain separate                     |
 
-Production compilation uses ES2022 and DOM standard API types, with `types: []`. Node types are limited to test/tooling configuration. Required future signing capabilities: SubtleCrypto importKey/sign with HMAC-SHA512, TextEncoder, Uint8Array, AbortSignal. Realtime capabilities belong to the client; signing alone does not require WebSocket. No ambient Bun/Deno/Node-specific APIs enter public types.
+Production compilation uses ES2022 and DOM standard API types, with `types: []`. Node types are limited to test/tooling configuration. Signing uses @noble/hashes and @scure/base and requires TextEncoder and Uint8Array. Web Crypto and btoa are not required. Realtime capabilities belong to the client; signing alone does not require WebSocket. No ambient Bun/Deno/Node-specific APIs enter public types.
 
 ## Test matrix selection
 
@@ -25,7 +25,7 @@ CI runs one Linux job with the default three-runtime selection. Minimum-version 
 
 Build uses the tsdown CLI directly, with no custom build script. tsdown was added using `npm install --save-dev --save-exact tsdown@latest`.
 
-Initial install: `npm install --save-dev --save-exact typescript@latest vitest@latest prettier@latest @types/node@latest`. npm resolves versions and writes package metadata; committed lockfile preserves that selection. Restore with npm install and check metadata has not changed. Do not manually edit dependency versions. Additional packages require actual need and the same latest-stable installation/review policy. S1 originally had no runtime dependencies. S2 validation now uses Zod, installed through `npm install --save-exact zod@latest`.
+Initial install: `npm install --save-dev --save-exact typescript@latest vitest@latest prettier@latest @types/node@latest`. npm resolves versions and writes package metadata; committed lockfile preserves that selection. Restore with npm install and check metadata has not changed. Do not manually edit dependency versions. Additional packages require actual need and the same latest-stable installation/review policy. S1 originally had no runtime dependencies. S2 validation uses Zod, installed through `npm install --save-exact zod@latest`. S3 now also uses @noble/hashes and @scure/base, installed through `npm install --save-exact @noble/hashes@latest @scure/base@latest`.
 
 ## Official references
 
@@ -36,3 +36,5 @@ Checked 2026-09-06: [Node Web Crypto](https://nodejs.org/download/release/v22.15
 Latest TypeScript 7.0.2 and tsdown 0.23.0 build the foundation successfully, but tsdown reports that TypeScript 7 API integration is experimental. No downgrade was made; later nonempty public declarations need continued consumer qualification.
 
 Vitest 5.0.0/Vite 8.2.2 declarations fail full third-party declaration checking with latest TypeScript (missing @vitest/expect and MarkOptions, and incompatible benchmark-provider optionality). `skipLibCheck: true` is scoped to tsconfig.tooling.json only; authored tests still typecheck. Production compilation and installed consumer checks keep full declaration checking. This is an explicit tooling limitation, not a claim of clean upstream types.
+
+Authored source and tooling use ESNext/Bundler module resolution with extensionless relative imports. tsdown emits ESM/CommonJS artifacts; installed consumers still verify NodeNext and bundler declarations. Signing is synchronous; AbortSignal belongs to future asynchronous provider/client APIs.

@@ -8,7 +8,7 @@ Package: **`@useceleris/server`**. Own trusted-server credential signing and con
 
 Use the [PRD](../../celeris-sdk-specs/SDK_PRD.md), [shared contract](../../celeris-sdk-specs/docs/shared-contract.md), [wire protocol](../../celeris-sdk-specs/docs/protocol.md), [JavaScript conventions](../../celeris-sdk-specs/docs/conventions/javascript.md), [conformance scenarios](../../celeris-sdk-specs/docs/conformance.md), [security policy](../../celeris-sdk-specs/docs/security-dependencies.md), [maintenance policy](../../celeris-sdk-specs/docs/maintenance.md), and [discrepancy register](../../celeris-sdk-specs/docs/discrepancies.md). Coordinate with the [other package tracker](../sdk-js-client/STAGES.md).
 
-The user's approved runtime scope supersedes the existing specifications' Node-only server wording: portable JavaScript, with Node.js, Bun and Deno initially qualified. This tracker does not claim those targets already pass. Keep standard APIs and Uint8Array/AbortSignal/URL/public types runtime-neutral. Signing uses asynchronous Web Crypto; realtime uses WebSocket. Require capabilities only where needed; expose explicit narrow adapters for missing capabilities rather than silently loading Node-specific fallbacks. Portable signing still belongs exclusively in trusted servers.
+The user's approved runtime scope supersedes the existing specifications' Node-only server wording: portable JavaScript, with Node.js, Bun and Deno initially qualified. This tracker does not claim those targets already pass. Keep standard APIs and Uint8Array/AbortSignal/URL/public types runtime-neutral. Signing is synchronous and uses @noble/hashes HMAC with @scure/base encoding; realtime uses WebSocket. Require capabilities only where needed; expose explicit narrow adapters for missing capabilities rather than silently loading Node-specific fallbacks. Portable signing still belongs exclusively in trusted servers.
 
 S0 contracts and S1 foundation are now present; pending acceptance is tracked below. No backend edits or package publication are authorized by these stages. Account/billing APIs, durable offline queues, automatic uncertain resend, global ordering and invented acknowledgements remain out of scope.
 
@@ -22,17 +22,17 @@ S0 contracts and S1 foundation are now present; pending acceptance is tracked be
 
 ## Stage status
 
-| Stage                       | Status      | Owner                                              | Evidence                                           | Completed  | Blockers                              |
-| --------------------------- | ----------- | -------------------------------------------------- | -------------------------------------------------- | ---------- | ------------------------------------- |
-| S0 — Contracts              | In progress | Codex (implementation); client reviewer unassigned | [Contract](docs/contracts.md)                      | —          | Client C0 acceptance pending          |
-| S1 — Foundation             | In progress | Codex (implementation)                             | [Verification](docs/verification.md)               | —          | Linux/Windows CI execution pending    |
-| S2 — Validation             | Complete    | Codex                                              | [Verification](docs/verification.md#s2-validation) | 2026-09-06 | Release gates remain open             |
-| S3 — Signing                | Not started | Unassigned                                         | None yet                                           | —          | See dependencies and blocker register |
-| S4 — Client integration     | Not started | Unassigned                                         | None yet                                           | —          | See dependencies and blocker register |
-| S5 — Security and lifecycle | Not started | Unassigned                                         | None yet                                           | —          | See dependencies and blocker register |
-| S6 — Qualification          | Not started | Unassigned                                         | None yet                                           | —          | See dependencies and blocker register |
-| S7 — Documentation          | Not started | Unassigned                                         | None yet                                           | —          | See dependencies and blocker register |
-| S8 — Release                | Not started | Unassigned                                         | None yet                                           | —          | See dependencies and blocker register |
+| Stage                       | Status      | Owner                                              | Evidence                                                 | Completed  | Blockers                              |
+| --------------------------- | ----------- | -------------------------------------------------- | -------------------------------------------------------- | ---------- | ------------------------------------- |
+| S0 — Contracts              | In progress | Codex (implementation); client reviewer unassigned | [Contract](docs/contracts.md)                            | —          | Client C0 acceptance pending          |
+| S1 — Foundation             | In progress | Codex (implementation)                             | [Verification](docs/verification.md)                     | —          | Linux/Windows CI execution pending    |
+| S2 — Validation             | Complete    | Codex                                              | [Verification](docs/verification.md#s2-validation)       | 2026-09-06 | Release gates remain open             |
+| S3 — Signing                | Complete    | Codex                                              | [Verification](docs/verification.md#s3-portable-signing) | 2026-09-06 | Release gates remain open             |
+| S4 — Client integration     | Not started | Unassigned                                         | None yet                                                 | —          | See dependencies and blocker register |
+| S5 — Security and lifecycle | Not started | Unassigned                                         | None yet                                                 | —          | See dependencies and blocker register |
+| S6 — Qualification          | Not started | Unassigned                                         | None yet                                                 | —          | See dependencies and blocker register |
+| S7 — Documentation          | Not started | Unassigned                                         | None yet                                                 | —          | See dependencies and blocker register |
+| S8 — Release                | Not started | Unassigned                                         | None yet                                                 | —          | See dependencies and blocker register |
 
 ## S0 — Contracts
 
@@ -113,13 +113,13 @@ Use separate `.ts` tests with explicit Vitest imports, small table-driven cases 
 
 **Coverage:** SDK-02, SDK-10; AUTH-01–03, SEC-01.
 
-- [ ] Implement asynchronous Web Crypto HMAC-SHA512 with exact UTF-8 JSON bytes, standard padded Base64, lowercase HMAC hex and the verified client-ID signature wrapper.
-- [ ] Encode without Buffer or handwritten crypto. Detect missing crypto capabilities explicitly; adapters cannot disable verification or substitute insecure primitives.
-- [ ] Verify independent synthetic golden vectors across Node.js/Bun/Deno, including Unicode, exact payload bytes, changed inputs and mutation safety. Keep client_secret distinct from signing_secret.
+- [x] Implement synchronous @noble/hashes HMAC-SHA512 with exact UTF-8 JSON bytes, standard padded Base64, lowercase HMAC hex and the verified client-ID signature wrapper.
+- [x] Encode with @scure/base without Buffer or handwritten crypto/encoding. Detect missing TextEncoder explicitly; no injectable crypto backend.
+- [x] Verify independent synthetic golden vectors across Node.js/Bun/Deno, including Unicode, exact payload bytes, changed inputs and mutation safety. Keep client_secret distinct from signing_secret.
 
 **Acceptance:** The same fixed inputs produce byte-identical credentials on every qualified runtime and no realtime client is needed for unit tests.
 
-**Evidence / findings:** None yet; add results and blocker IDs here.
+**Evidence / findings:** [S3 verification](docs/verification.md#s3-portable-signing): exact vectors on all eight runtimes, synchronous error checks and installed declarations. Completed 2026-09-06 by Codex. Client agreement, cross-OS evidence and D-001–D-003 remain open.
 
 ## S4 — Client integration
 
@@ -128,7 +128,7 @@ Use separate `.ts` tests with explicit Vitest imports, small table-driven cases 
 **Coverage:** SDK-02–08; AUTH-03–04, LIFE-01–03, PUB-01–02, REC-01–04.
 
 - [ ] Add a declared versioned dependency on @useceleris/client and a fresh-signing credential-provider convenience through its public API; never copy codec, transport or reconnect internals.
-- [ ] Preserve cancellation, safe errors, application ownership and subscription behavior. Do not expose browser-safe claims for server signing merely because Web Crypto is portable.
+- [ ] Preserve cancellation, safe errors, application ownership and subscription behavior. Do not expose browser-safe claims for server signing merely because the cryptographic libraries are portable.
 - [ ] Test integration with packed client artifacts rather than source imports. Pre-release local artifact tests may unblock development; published dependencies must use installable versions, not file: paths.
 
 **Acceptance:** Provider/client integration tests pass and full messaging qualification remains tracked in S6; dependency graph has no server-to-client-to-server cycle.
@@ -141,7 +141,7 @@ Use separate `.ts` tests with explicit Vitest imports, small table-driven cases 
 
 **Coverage:** SDK-02, SDK-08, SDK-10; AUTH-04–05, LIFE-03–04, RES-02–04, SEC-02–03.
 
-- [ ] Test close/cancel during signing and credential acquisition; Web Crypto work may be non-abortable, so suppress stale completion without claiming computation was stopped.
+- [ ] Test close/cancel during asynchronous credential acquisition and suppress stale provider completion. The signer is synchronous and has no signal argument.
 - [ ] Verify secrets/signed URLs never leak via exceptions, diagnostics or serialization. Avoid global credentials and keep application authorization responsibility explicit.
 - [ ] Validate missing-capability errors, side-effect-free imports and resource cleanup in each runtime; reuse client bounded behavior and no-resend guarantees.
 
@@ -218,4 +218,4 @@ Initial entries describe known dependencies/findings; they do not imply implemen
 - [ ] Exact npm names, dependency direction, declarations, exports and examples agree.
 - [ ] Package support, security response and future release maintenance have accountable owners.
 
-Recheck the source discrepancy register before marking any blocker resolved. Completed local foundation checks are recorded in docs/verification.md; signing and integration remain future stages.
+Recheck the source discrepancy register before marking any blocker resolved. Local foundation and signing checks are recorded in docs/verification.md; client integration and backend acceptance remain future stages.

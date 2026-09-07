@@ -1,8 +1,8 @@
 import { describe, expect, test } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { repositoryRoot } from "../helpers/commands.js";
-import { usePackageFixture } from "../helpers/package-fixture.js";
+import { repositoryRoot } from "../helpers/commands";
+import { usePackageFixture } from "../helpers/package-fixture";
 
 const getFixture = usePackageFixture();
 const expectedFiles = [
@@ -29,7 +29,11 @@ describe("package contents", () => {
     );
     expect(manifest.name).toBe("@useceleris/server");
     expect(manifest.private).toBe(true);
-    expect(Object.keys(manifest.dependencies ?? {})).toEqual(["zod"]);
+    expect(Object.keys(manifest.dependencies ?? {})).toEqual([
+      "@noble/hashes",
+      "@scure/base",
+      "zod",
+    ]);
     expect(manifest.peerDependencies ?? {}).toEqual({});
   });
 });

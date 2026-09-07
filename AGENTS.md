@@ -33,4 +33,10 @@ Every test must identify package-owned behavior or a defect in this package it c
 
 ## Schemas and naming
 
-Use descriptive domain names for functions, schemas and parsed values (for example, `prepareTokenPayload` and `parsedClaims`). Define schema-backed data shapes once in Zod and derive types with `z.input` or `z.infer`; do not duplicate them in handwritten interfaces or unions. Prefer supported Zod validators, defaults and object composition over custom checks. Reserve refinements for domain rules such as uniqueness. Parse once at the input boundary, keep token mapping explicit, and never expose raw validation errors or input values.
+Use descriptive domain names for functions, schemas and parsed values (for example, `prepareTokenPayload` and `parsedClaims`). Use Zod for actual runtime input validation and derive those input types with `z.input` or `z.infer`. Use plain TypeScript types for generated outputs and behavioral contracts; never create unused schemas solely for type inference. Prefer supported Zod validators, defaults and object composition over custom checks. Reserve refinements for domain rules such as uniqueness. Parse once at the input boundary, keep token mapping explicit, and never expose raw validation errors or input values.
+
+## Cryptography and encoding
+
+Prefer established cryptographic and encoding libraries over custom implementations. Use @noble/hashes for HMAC-SHA512 and @scure/base for Base64/hex; preserve independent protocol vectors when changing dependencies. Review exact installed versions, compatibility and audit scope. Do not add alternative crypto backends or custom encoding helpers without a concrete requirement.
+
+Use extensionless relative imports in authored TypeScript source, tests and fixtures. Preserve extensions required by dependency export names and generated artifact paths. Use bundler resolution for authored code; qualify installed ESM/CommonJS declarations independently.
