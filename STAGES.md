@@ -95,7 +95,7 @@ Use separate `.ts` tests with explicit Vitest imports, small table-driven cases 
 | Payload ownership                | Compare complete expected wire objects; mutate original nested claims after preparation and verify output stays unchanged. Extra caller fields never appear in output; no input mutation. SDK-02         |
 | Safe failures                    | Assert stable error code and absence of synthetic secret/claim markers from public message, cause and serialization. Do not test JavaScript or crypto primitives in isolation. SDK-10                    |
 
-### Completion gate and evidence
+### Completion gate and evidence..k
 
 - [x] `npm run test` passes with the existing eight-runtime matrix; record validation unit results separately from installed import checks. Import success alone does not establish cross-runtime validation behavior; full signer behavior qualification follows in S3/S6.
 - [x] `npm run build`, `npm run typecheck`, `npm run format:check` and `git diff --check` pass. Existing package/declaration/portability checks remain intact; no production Node globals/imports, dependencies beyond Zod or unintended public exports appear.
