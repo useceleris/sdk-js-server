@@ -2,6 +2,7 @@
 
 Read [STAGES.md](STAGES.md), [contracts](docs/contracts.md), [runtime support](docs/runtime-support.md), and [verification](docs/verification.md).
 
+- Never create a git commit without the user's explicit consent in the current conversation. Leave changes uncommitted and ask; approval of a plan or edit is not commit consent.
 - Work only in the authorized stages. S0/S1 supply contracts and tooling, not a signer or client integration.
 - Author code and fixtures in TypeScript `.ts` files. JavaScript extensions belong only to generated package/temporary consumer output. Use tsdown CLI directly; no custom build script.
 - Keep source/runtime dependencies and public types portable. Node APIs are allowed only in build/test tooling, never `src/`.

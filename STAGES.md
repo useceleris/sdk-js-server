@@ -127,11 +127,14 @@ Use separate `.ts` tests with explicit Vitest imports, small table-driven cases 
 
 **Coverage:** SDK-02–08; AUTH-03–04, LIFE-01–03, PUB-01–02, REC-01–04.
 
-- [ ] Add a declared versioned dependency on @useceleris/client and a fresh-signing credential-provider convenience through its public API; never copy codec, transport or reconnect internals.
+- [ ] Add a declared versioned dependency on @useceleris/client and the fresh-signing credential-provider convenience — the single new export `createCredentialProvider({ signer, claims })` returning the client's `CredentialProvider`, re-exporting `CredentialRequest`; never copy codec, transport or reconnect internals. It maps request → claims → sign with fresh timestamp and cancellation; if it needs more than that, document the pattern in [EXAMPLES.md](EXAMPLES.md) instead of growing the API (minimalism is binding; see the client [contracts](../sdk-js-client/docs/contracts.md) Public API surface).
 - [ ] Preserve cancellation, safe errors, application ownership and subscription behavior. Do not expose browser-safe claims for server signing merely because the cryptographic libraries are portable.
 - [ ] Test integration with packed client artifacts rather than source imports. Pre-release local artifact tests may unblock development; published dependencies must use installable versions, not file: paths.
+- [ ] Record ACK-01 acknowledgement: review and accept the client's exported `Credentials`/`CredentialRequest`/`CredentialProvider` types from C4 in both trackers, closing the currently one-sided client-side review.
 
-**Acceptance:** Provider/client integration tests pass and full messaging qualification remains tracked in S6; dependency graph has no server-to-client-to-server cycle.
+**Tests:** Provider invokes `claims(request)` freshly per call with a fresh timestamp; `replayLookbackMs` maps to `replay: { lookbackMs }` and its absence to `replay: false`; `request.signal` abort rejects before signing and propagates to an asynchronous `claims()`; scope never widens beyond what `claims()` returns — untrusted request fields cannot inject channels or permissions; provider output satisfies the client's `Credentials` shape; integration runs against the packed client artifact, not sibling source.
+
+**Acceptance:** Exactly one new public export; the server bundle contains no client runtime internals (codec, transport, reconnect); ACK-01 acknowledgement recorded in both trackers; provider/client integration tests pass and full messaging qualification remains tracked in S6; dependency graph has no server-to-client-to-server cycle.
 
 **Evidence / findings:** None yet; add results and blocker IDs here.
 
@@ -209,6 +212,7 @@ Initial entries describe known dependencies/findings; they do not imply implemen
 | D-003   | Relayed identifiers can corrupt framing                               | Reject unsafe local identifiers; malicious peers remain a server concern                                              | Service/security fix or verified resolution with malicious-peer tests required            | Service/security owner unassigned; open |
 | PORT-01 | Older specs describe Node-only signing; new scope includes Bun/Deno   | Record superseding scope and concrete capability/runtime matrix in stage 0/1; keep source docs unchanged in this pass | Reconcile spec support claims and attach real runtime qualification before stable release | SDK contract owner unassigned; open     |
 | DEP-01  | Client package is not implemented/published yet                       | S4/S6 wait for linked client milestones; client development is independent                                            | Stable server dependency must be installable and qualified                                | Package owners unassigned; open         |
+| ACK-01  | Client request-object provider types await server acknowledgement     | Client C4 exports `Credentials`/`CredentialRequest`/`CredentialProvider` as the concrete artifact; S4 reviews and accepts them | Acknowledgement recorded in both trackers before stable release                           | Server contract owner unassigned; open  |
 
 ## Completion and maintenance
 
