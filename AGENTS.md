@@ -3,6 +3,7 @@
 Read [STAGES.md](STAGES.md), [contracts](docs/contracts.md), [runtime support](docs/runtime-support.md), and [verification](docs/verification.md).
 
 - Never create a git commit without the user's explicit consent in the current conversation. Leave changes uncommitted and ask; approval of a plan or edit is not commit consent.
+- Segment model (SEG-01, owner directive 2026-09-20): in the client SDK, one `Channel` is one WebSocket client carrying all of that channel's segments; connecting auto-joins the default segment `"default"`; `Segment` handlers are proxies sharing the channel connection, never sockets of their own. Server-relevant consequences: signing claims scope segments explicitly (`SegmentPermissions`), `PUB` auto-joins a segment server-side, `PRES_SUB` force-joins for messages, and read access is evaluated at join — a write-only token is a member that receives nothing. Keep S4+ examples and the credential provider consistent with this model; see the client [contracts — Segment model](../sdk-js-client/docs/contracts.md).
 - Work only in the authorized stages. S0/S1 supply contracts and tooling, not a signer or client integration.
 - Author code and fixtures in TypeScript `.ts` files. JavaScript extensions belong only to generated package/temporary consumer output. Use tsdown CLI directly; no custom build script.
 - Keep source/runtime dependencies and public types portable. Node APIs are allowed only in build/test tooling, never `src/`.
