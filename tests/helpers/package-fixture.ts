@@ -1,8 +1,12 @@
 import { afterAll, beforeAll } from "vitest";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { repositoryRoot, runNpm } from "./commands";
+
+// The unpublished @useceleris/client dependency (DEP-01) is satisfied from
+// the sibling repository's packed tarball, never from a registry.
+const clientRepositoryRoot = resolve(repositoryRoot, "../sdk-js-client");
 
 interface PackedArtifact {
   filename: string;
@@ -14,8 +18,14 @@ export interface PackageFixture {
   packedFiles: string[];
 }
 
-function packPackage(destination: string): PackedArtifact {
-  const output = runNpm(["pack", "--json", "--pack-destination", destination]);
+function packPackage(
+  destination: string,
+  workingDirectory = repositoryRoot,
+): PackedArtifact {
+  const output = runNpm(
+    ["pack", "--json", "--pack-destination", destination],
+    workingDirectory,
+  );
   const artifacts = JSON.parse(output) as PackedArtifact[];
   const artifact = artifacts[0];
   if (!artifact) {
@@ -54,13 +64,26 @@ export function compileConsumers(consumerDirectory: string): void {
   }
 
   // Keep imports external so consumers exercise the installed tarball.
-  compile(["consumer.ts", "signing-consumer.ts"], "esm");
-  compile(["consumer-require.ts", "signing-consumer.ts"], "cjs");
+  compile(
+    [
+      "consumer.ts",
+      "signing-consumer.ts",
+      "provider-consumer.ts",
+      "capability-consumer.ts",
+    ],
+    "esm",
+  );
+  compile(
+    ["consumer-require.ts", "signing-consumer.ts", "provider-consumer.ts"],
+    "cjs",
+  );
 }
 
 function prepareFixture(temporaryDirectory: string): PackageFixture {
   runNpm(["run", "build"]);
+  runNpm(["run", "build"], clientRepositoryRoot);
   const artifact = packPackage(temporaryDirectory);
+  const clientArtifact = packPackage(temporaryDirectory, clientRepositoryRoot);
   const consumerDirectory = join(temporaryDirectory, "consumer");
 
   mkdirSync(consumerDirectory, { recursive: true });
@@ -68,6 +91,8 @@ function prepareFixture(temporaryDirectory: string): PackageFixture {
     join(consumerDirectory, "package.json"),
     JSON.stringify({ private: true, type: "module" }),
   );
+  // One install with both tarballs so the client dependency resolves from
+  // the provided artifact instead of a registry lookup.
   runNpm(
     [
       "install",
@@ -75,6 +100,7 @@ function prepareFixture(temporaryDirectory: string): PackageFixture {
       "--no-audit",
       "--no-fund",
       join(temporaryDirectory, artifact.filename),
+      join(temporaryDirectory, clientArtifact.filename),
     ],
     consumerDirectory,
   );

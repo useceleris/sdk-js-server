@@ -32,8 +32,9 @@ test("portable source and output contain no runtime-specific dependencies or glo
 
   for (const file of codeFiles) {
     const source = readFileSync(file, "utf8");
+    // console: shipped code has no diagnostic output channel (RES-04).
     expect(source, file).not.toMatch(
-      /\b(?:Buffer|process|Bun|Deno|NodeJS)\b|\bnode:/,
+      /\b(?:Buffer|process|Bun|Deno|NodeJS|console)\b|\bnode:/,
     );
     const quotedValues = source.matchAll(
       /(?:from\s*|import\s*\(|require\s*\()?["']([^"']+)["']/g,

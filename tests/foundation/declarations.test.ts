@@ -24,7 +24,8 @@ test("latest TypeScript resolves installed ESM, CommonJS and bundler declaration
     const configuration = join(consumerDirectory, `tsconfig-${mode.name}.json`);
     writeFileSync(
       join(consumerDirectory, filename),
-      `import { createSigner, type Signer, type SigningClaims, type SignedCredentials } from "@useceleris/server";
+      `import { createSigner, createCredentialProvider, type Signer, type SigningClaims, type SignedCredentials, type CredentialRequest } from "@useceleris/server";
+import type { CredentialProvider } from "@useceleris/client";
 const claims: SigningClaims = {
   channels: { kind: "all" },
   permissions: { kind: "restricted", segments: [] },
@@ -34,7 +35,18 @@ const signer: Signer = createSigner({
   signingSecret: "test",
 });
 const credentials: SignedCredentials = signer.sign(claims);
+const provider: CredentialProvider = createCredentialProvider({
+  signer,
+  claims: (request: CredentialRequest) => ({
+    ...claims,
+    replay:
+      request.replayLookbackMs !== undefined
+        ? { lookbackMs: request.replayLookbackMs }
+        : false,
+  }),
+});
 void credentials;
+void provider;
 `,
     );
     writeFileSync(

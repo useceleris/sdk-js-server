@@ -32,8 +32,46 @@ describe("package contents", () => {
     expect(Object.keys(manifest.dependencies ?? {})).toEqual([
       "@noble/hashes",
       "@scure/base",
+      "@useceleris/client",
       "zod",
     ]);
     expect(manifest.peerDependencies ?? {}).toEqual({});
+  });
+
+  // AUTH-05: a browser bundle built from the client can never reach the
+  // signing surface — verified against the installed packed client artifact.
+  test("installed client artifact excludes the signing surface", () => {
+    const { consumerDirectory } = getFixture();
+    const clientRoot = join(
+      consumerDirectory,
+      "node_modules/@useceleris/client",
+    );
+    const clientManifest = JSON.parse(
+      readFileSync(join(clientRoot, "package.json"), "utf8"),
+    );
+    expect(Object.keys(clientManifest.dependencies ?? {})).toEqual(["zod"]);
+
+    for (const bundle of ["dist/index.js", "dist/index.cjs"]) {
+      const contents = readFileSync(join(clientRoot, bundle), "utf8");
+      for (const marker of [
+        "@useceleris/server",
+        "createSigner",
+        "signingSecret",
+        "@noble/hashes",
+        "@scure/base",
+      ]) {
+        expect(contents, `${bundle} must not contain ${marker}`).not.toContain(
+          marker,
+        );
+      }
+    }
+  });
+
+  test("runtime bundles contain no client code (type-only dependency)", () => {
+    getFixture();
+    for (const bundle of ["dist/index.js", "dist/index.cjs"]) {
+      const contents = readFileSync(join(repositoryRoot, bundle), "utf8");
+      expect(contents, bundle).not.toContain("@useceleris/client");
+    }
   });
 });

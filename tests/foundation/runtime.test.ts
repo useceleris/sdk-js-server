@@ -7,6 +7,21 @@ import {
 import { readRuntimeMatrix, runConsumer } from "../helpers/runtimes";
 
 const getFixture = usePackageFixture();
+const expectedExports = ["createCredentialProvider", "createSigner"];
+const expectedCapabilityResult = {
+  signedBeforeRemoval: true,
+  code: "Configuration",
+  safeMessage: true,
+  messageLeaksSecret: false,
+};
+const expectedProviderResult = {
+  initialReplay: false,
+  initialChannels: ["room-1"],
+  reconnectReplay: 30_000,
+  reconnectTimestamp: 1_700_000_000_000,
+  signatureLengthsEqual: true,
+  abortedRejection: "consumer-abort-reason",
+};
 
 beforeAll(() => {
   compileConsumers(getFixture().consumerDirectory);
@@ -18,9 +33,29 @@ for (const runtime of readRuntimeMatrix()) {
       const { consumerDirectory } = getFixture();
       const result = runConsumer(runtime, "consumer.js", consumerDirectory);
       expect(result).toEqual({
-        exports: ["createSigner"],
+        exports: expectedExports,
         privatePathBlocked: true,
       });
+    });
+
+    test("bridges the signer to the client provider contract (ESM)", () => {
+      expect(
+        runConsumer(
+          runtime,
+          "provider-consumer.js",
+          getFixture().consumerDirectory,
+        ),
+      ).toEqual(expectedProviderResult);
+    });
+
+    test("reports missing TextEncoder through the installed package", () => {
+      expect(
+        runConsumer(
+          runtime,
+          "capability-consumer.js",
+          getFixture().consumerDirectory,
+        ),
+      ).toEqual(expectedCapabilityResult);
     });
 
     test("signs fixed vectors through the installed ESM package", () => {
@@ -51,9 +86,18 @@ for (const runtime of readRuntimeMatrix()) {
           consumerDirectory,
         );
         expect(result).toEqual({
-          exports: ["createSigner"],
+          exports: expectedExports,
           privatePathBlocked: true,
         });
+      });
+      test("bridges the signer to the client provider contract (CommonJS)", () => {
+        expect(
+          runConsumer(
+            runtime,
+            "provider-consumer.cjs",
+            getFixture().consumerDirectory,
+          ),
+        ).toEqual(expectedProviderResult);
       });
     }
   });

@@ -22,17 +22,17 @@ S0 contracts and S1 foundation are now present; pending acceptance is tracked be
 
 ## Stage status
 
-| Stage                       | Status      | Owner                                              | Evidence                                                 | Completed  | Blockers                              |
-| --------------------------- | ----------- | -------------------------------------------------- | -------------------------------------------------------- | ---------- | ------------------------------------- |
-| S0 — Contracts              | In progress | Codex (implementation); client reviewer unassigned | [Contract](docs/contracts.md)                            | —          | Client C0 acceptance pending          |
-| S1 — Foundation             | In progress | Codex (implementation)                             | [Verification](docs/verification.md)                     | —          | Linux/Windows CI execution pending    |
-| S2 — Validation             | Complete    | Codex                                              | [Verification](docs/verification.md#s2-validation)       | 2026-09-06 | Release gates remain open             |
-| S3 — Signing                | Complete    | Codex                                              | [Verification](docs/verification.md#s3-portable-signing) | 2026-09-06 | Release gates remain open             |
-| S4 — Client integration     | Not started | Unassigned                                         | None yet                                                 | —          | See dependencies and blocker register |
-| S5 — Security and lifecycle | Not started | Unassigned                                         | None yet                                                 | —          | See dependencies and blocker register |
-| S6 — Qualification          | Not started | Unassigned                                         | None yet                                                 | —          | See dependencies and blocker register |
-| S7 — Documentation          | Not started | Unassigned                                         | None yet                                                 | —          | See dependencies and blocker register |
-| S8 — Release                | Not started | Unassigned                                         | None yet                                                 | —          | See dependencies and blocker register |
+| Stage                       | Status      | Owner                                              | Evidence                                                       | Completed  | Blockers                                           |
+| --------------------------- | ----------- | -------------------------------------------------- | -------------------------------------------------------------- | ---------- | -------------------------------------------------- |
+| S0 — Contracts              | In progress | Codex (implementation); client reviewer unassigned | [Contract](docs/contracts.md)                                  | —          | Client C0 acceptance pending                       |
+| S1 — Foundation             | In progress | Codex (implementation)                             | [Verification](docs/verification.md)                           | —          | Linux/Windows CI execution pending                 |
+| S2 — Validation             | Complete    | Codex                                              | [Verification](docs/verification.md#s2-validation)             | 2026-09-06 | Release gates remain open                          |
+| S3 — Signing                | Complete    | Codex                                              | [Verification](docs/verification.md#s3-portable-signing)       | 2026-09-06 | Release gates remain open                          |
+| S4 — Client integration     | Complete    | Claude                                             | [Verification](docs/verification.md#s4-client-integration)     | 2026-09-21 | DEP-01 (unpublished client) remains a release gate |
+| S5 — Security and lifecycle | Complete    | Claude                                             | [Verification](docs/verification.md#s5-security-and-lifecycle) | 2026-09-21 | Release gates remain open                          |
+| S6 — Qualification          | Not started | Unassigned                                         | None yet                                                       | —          | See dependencies and blocker register              |
+| S7 — Documentation          | Not started | Unassigned                                         | None yet                                                       | —          | See dependencies and blocker register              |
+| S8 — Release                | Not started | Unassigned                                         | None yet                                                       | —          | See dependencies and blocker register              |
 
 ## S0 — Contracts
 
@@ -123,34 +123,38 @@ Use separate `.ts` tests with explicit Vitest imports, small table-driven cases 
 
 ## S4 — Client integration
 
-**Dependencies:** S3 and client C3/C4; full messaging validation waits for C5–C8.
+**Status:** Complete. **Owner:** Claude. **Completed:** 2026-09-21.
+
+**Dependencies:** S3 and client C3/C4; full messaging validation waits for C5–C8 (client C5–C9 complete at acceptance time).
 
 **Coverage:** SDK-02–08; AUTH-03–04, LIFE-01–03, PUB-01–02, REC-01–04.
 
-- [ ] Add a declared versioned dependency on @useceleris/client and the fresh-signing credential-provider convenience — the single new export `createCredentialProvider({ signer, claims })` returning the client's `CredentialProvider`, re-exporting `CredentialRequest`; never copy codec, transport or reconnect internals. It maps request → claims → sign with fresh timestamp and cancellation; if it needs more than that, document the pattern in [EXAMPLES.md](EXAMPLES.md) instead of growing the API (minimalism is binding; see the client [contracts](../sdk-js-client/docs/contracts.md) Public API surface).
-- [ ] Preserve cancellation, safe errors, application ownership and subscription behavior. Do not expose browser-safe claims for server signing merely because the cryptographic libraries are portable.
-- [ ] Test integration with packed client artifacts rather than source imports. Pre-release local artifact tests may unblock development; published dependencies must use installable versions, not file: paths.
-- [ ] Record ACK-01 acknowledgement: review and accept the client's exported `Credentials`/`CredentialRequest`/`CredentialProvider` types from C4 in both trackers, closing the currently one-sided client-side review.
+- [x] Add a declared versioned dependency on @useceleris/client and the fresh-signing credential-provider convenience — the single new export `createCredentialProvider({ signer, claims })` returning the client's `CredentialProvider`, re-exporting `CredentialRequest`; never copy codec, transport or reconnect internals. It maps request → claims → sign with fresh timestamp and cancellation; if it needs more than that, document the pattern in [EXAMPLES.md](EXAMPLES.md) instead of growing the API (minimalism is binding; see the client [contracts](../sdk-js-client/docs/contracts.md) Public API surface). Implemented as an exact `0.0.0` dependency consumed type-only at runtime; local development resolves it via `npm link ../sdk-js-client` while DEP-01 keeps the client unpublished.
+- [x] Preserve cancellation, safe errors, application ownership and subscription behavior. Do not expose browser-safe claims for server signing merely because the cryptographic libraries are portable. Cancellation uses `request.signal.throwIfAborted()` before claims and before signing; option failures reuse the fixed safe Configuration error; the `replayLookbackMs → replay` mapping stays in the application's `claims()` callback (EXAMPLES.md canonical pattern).
+- [x] Test integration with packed client artifacts rather than source imports. Pre-release local artifact tests may unblock development; published dependencies must use installable versions, not file: paths. The package fixture now builds and packs both repositories and installs both tarballs into one isolated consumer in a single `npm install`; package.json carries no file: path.
+- [x] Record ACK-01 acknowledgement: review and accept the client's exported `Credentials`/`CredentialRequest`/`CredentialProvider` types from C4 in both trackers, closing the currently one-sided client-side review. Recorded in [contracts — S4 client integration](docs/contracts.md) against client revision `d26d80f` and mirrored in the client tracker/contracts.
 
-**Tests:** Provider invokes `claims(request)` freshly per call with a fresh timestamp; `replayLookbackMs` maps to `replay: { lookbackMs }` and its absence to `replay: false`; `request.signal` abort rejects before signing and propagates to an asynchronous `claims()`; scope never widens beyond what `claims()` returns — untrusted request fields cannot inject channels or permissions; provider output satisfies the client's `Credentials` shape; integration runs against the packed client artifact, not sibling source.
+**Tests:** Provider invokes `claims(request)` freshly per call with a fresh timestamp; `replayLookbackMs` maps to `replay: { lookbackMs }` and its absence to `replay: false`; `request.signal` abort rejects before signing and propagates to an asynchronous `claims()`; scope never widens beyond what `claims()` returns — untrusted request fields cannot inject channels or permissions; provider output satisfies the client's `Credentials` shape; integration runs against the packed client artifact, not sibling source. Realized as [tests/provider/credential-provider.test.ts](tests/provider/credential-provider.test.ts) (14 unit cases), the `provider-consumer` packed fixture run ESM+CommonJS across the runtime matrix, extended declaration consumers (all three module modes typing the provider against the installed client declarations), the bundle-purity and manifest assertions in the package suite, and a new EXAMPLES.md drift test compiling every snippet.
 
 **Acceptance:** Exactly one new public export; the server bundle contains no client runtime internals (codec, transport, reconnect); ACK-01 acknowledgement recorded in both trackers; provider/client integration tests pass and full messaging qualification remains tracked in S6; dependency graph has no server-to-client-to-server cycle.
 
-**Evidence / findings:** None yet; add results and blocker IDs here.
+**Evidence / findings:** Implemented 2026-09-21; see [S4 verification](docs/verification.md#s4-client-integration). `dist/index.js`/`dist/index.cjs` contain no `@useceleris/client` reference (type-only dependency, test-asserted). DEP-01 remains open: the S8 release gate replaces the npm-link arrangement with the published installable client. Live end-to-end messaging through server-signed credentials remains S6.
 
 ## S5 — Security and lifecycle
+
+**Status:** Complete. **Owner:** Claude. **Completed:** 2026-09-21.
 
 **Dependencies:** S4.
 
 **Coverage:** SDK-02, SDK-08, SDK-10; AUTH-04–05, LIFE-03–04, RES-02–04, SEC-02–03.
 
-- [ ] Test close/cancel during asynchronous credential acquisition and suppress stale provider completion. The signer is synchronous and has no signal argument.
-- [ ] Verify secrets/signed URLs never leak via exceptions, diagnostics or serialization. Avoid global credentials and keep application authorization responsibility explicit.
-- [ ] Validate missing-capability errors, side-effect-free imports and resource cleanup in each runtime; reuse client bounded behavior and no-resend guarantees.
+- [x] Test close/cancel during asynchronous credential acquisition and suppress stale provider completion. The signer is synchronous and has no signal argument. Covered by the external-abort provider test (rejection at the post-claims abort check; no signature ever produced) and [tests/provider/client-lifecycle.test.ts](tests/provider/client-lifecycle.test.ts), which drives the real client against the real provider with a gated claims callback and a counting `WebSocket` stub: `close()` and caller-signal abort mid-acquisition reject `Cancelled`, and late claims completion constructs zero sockets and signs nothing.
+- [x] Verify secrets/signed URLs never leak via exceptions, diagnostics or serialization. Avoid global credentials and keep application authorization responsibility explicit. Provider option errors carry no cause and serialize without the secret; a claims failure embedding the signing secret surfaces only the client's fixed `Transport` error; two-signer isolation shows deterministic credentials with no shared state; signed URLs are built only by the client (cited, structurally out of server scope).
+- [x] Validate missing-capability errors, side-effect-free imports and resource cleanup in each runtime; reuse client bounded behavior and no-resend guarantees. [tests/fixtures/capability-consumer.ts](tests/fixtures/capability-consumer.ts) removes `TextEncoder` and exercises the fixed Configuration error through the installed tarball on Node/Bun/Deno; import-guard consumers already prove side-effect-free imports per runtime; the shipped code has no timers/sockets/diagnostics (the portability grep now also forbids `console`); bounded writer behavior and no-resend are client contract guarantees, cited in [contracts — S5](docs/contracts.md).
 
 **Acceptance:** Security and lifecycle evidence covers server-specific behavior plus reuse boundaries; browser exclusion is demonstrated by client package inspection.
 
-**Evidence / findings:** None yet; add results and blocker IDs here.
+**Evidence / findings:** Implemented 2026-09-21; see [S5 verification](docs/verification.md#s5-security-and-lifecycle). No production source change was needed — the S4 provider and the client already implement the required behavior; S5 closes the evidence gaps with tests only. Browser exclusion is asserted against the installed packed client artifact (dependencies are `zod` only; dist bundles contain no signing identifiers). SEC-02/SEC-03 remain client-owned citations. Blockers unchanged: DEP-01, D-001–D-003; cross-OS/extended-matrix evidence stays with S6.
 
 ## S6 — Qualification
 
@@ -205,14 +209,14 @@ C6 defines and tests the presence recovery request boundary; C7 implements the r
 
 Initial entries describe known dependencies/findings; they do not imply implementation tests have already failed. Add a named owner, resolution revision and test evidence as work proceeds.
 
-| ID      | Finding / dependency                                                  | Development impact                                                                                                    | Stable release gate                                                                       | Owner / resolution evidence             |
-| ------- | --------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- | --------------------------------------- |
-| D-001   | Server accepts credentials older than the documented freshness window | Implement fresh signing and honest expiry behavior; never assume SDK freshness fixes server acceptance                | Recorded service/security resolution and boundary tests required                          | Service/security owner unassigned; open |
-| D-002   | Batched error boundaries are ambiguous                                | Build bounded fail-safe parsing and negative fixtures; no guessed error splitting                                     | Protocol-owner disposition and compatible conformance evidence required                   | Protocol owner unassigned; open         |
-| D-003   | Relayed identifiers can corrupt framing                               | Reject unsafe local identifiers; malicious peers remain a server concern                                              | Service/security fix or verified resolution with malicious-peer tests required            | Service/security owner unassigned; open |
-| PORT-01 | Older specs describe Node-only signing; new scope includes Bun/Deno   | Record superseding scope and concrete capability/runtime matrix in stage 0/1; keep source docs unchanged in this pass | Reconcile spec support claims and attach real runtime qualification before stable release | SDK contract owner unassigned; open     |
-| DEP-01  | Client package is not implemented/published yet                       | S4/S6 wait for linked client milestones; client development is independent                                            | Stable server dependency must be installable and qualified                                | Package owners unassigned; open         |
-| ACK-01  | Client request-object provider types await server acknowledgement     | Client C4 exports `Credentials`/`CredentialRequest`/`CredentialProvider` as the concrete artifact; S4 reviews and accepts them | Acknowledgement recorded in both trackers before stable release                           | Server contract owner unassigned; open  |
+| ID      | Finding / dependency                                                  | Development impact                                                                                                             | Stable release gate                                                                       | Owner / resolution evidence                                                                                        |
+| ------- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| D-001   | Server accepts credentials older than the documented freshness window | Implement fresh signing and honest expiry behavior; never assume SDK freshness fixes server acceptance                         | Recorded service/security resolution and boundary tests required                          | Service/security owner unassigned; open                                                                            |
+| D-002   | Batched error boundaries are ambiguous                                | Build bounded fail-safe parsing and negative fixtures; no guessed error splitting                                              | Protocol-owner disposition and compatible conformance evidence required                   | Protocol owner unassigned; open                                                                                    |
+| D-003   | Relayed identifiers can corrupt framing                               | Reject unsafe local identifiers; malicious peers remain a server concern                                                       | Service/security fix or verified resolution with malicious-peer tests required            | Service/security owner unassigned; open                                                                            |
+| PORT-01 | Older specs describe Node-only signing; new scope includes Bun/Deno   | Record superseding scope and concrete capability/runtime matrix in stage 0/1; keep source docs unchanged in this pass          | Reconcile spec support claims and attach real runtime qualification before stable release | SDK contract owner unassigned; open                                                                                |
+| DEP-01  | Client package is implemented (C0–C9) but not published               | S4 consumes it via exact `0.0.0` dependency + `npm link` locally; packed-artifact tests install both sibling tarballs          | Stable server dependency must be installable and qualified                                | Package owners unassigned; open                                                                                    |
+| ACK-01  | Client request-object provider types await server acknowledgement     | Client C4 exports `Credentials`/`CredentialRequest`/`CredentialProvider` as the concrete artifact; S4 reviews and accepts them | Acknowledgement recorded in both trackers before stable release                           | Accepted 2026-09-21 by S4 against client `d26d80f`; see [contracts — S4](docs/contracts.md) and the client tracker |
 
 ## Completion and maintenance
 
@@ -222,4 +226,4 @@ Initial entries describe known dependencies/findings; they do not imply implemen
 - [ ] Exact npm names, dependency direction, declarations, exports and examples agree.
 - [ ] Package support, security response and future release maintenance have accountable owners.
 
-Recheck the source discrepancy register before marking any blocker resolved. Local foundation and signing checks are recorded in docs/verification.md; client integration and backend acceptance remain future stages.
+Recheck the source discrepancy register before marking any blocker resolved. Local foundation, signing and client-integration checks are recorded in docs/verification.md; live backend acceptance remains future work (S6).
