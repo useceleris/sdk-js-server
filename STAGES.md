@@ -22,31 +22,33 @@ S0 contracts and S1 foundation are now present; pending acceptance is tracked be
 
 ## Stage status
 
-| Stage                       | Status      | Owner                                              | Evidence                                                       | Completed  | Blockers                                           |
-| --------------------------- | ----------- | -------------------------------------------------- | -------------------------------------------------------------- | ---------- | -------------------------------------------------- |
-| S0 — Contracts              | In progress | Codex (implementation); client reviewer unassigned | [Contract](docs/contracts.md)                                  | —          | Client C0 acceptance pending                       |
-| S1 — Foundation             | In progress | Codex (implementation)                             | [Verification](docs/verification.md)                           | —          | Linux/Windows CI execution pending                 |
-| S2 — Validation             | Complete    | Codex                                              | [Verification](docs/verification.md#s2-validation)             | 2026-09-06 | Release gates remain open                          |
-| S3 — Signing                | Complete    | Codex                                              | [Verification](docs/verification.md#s3-portable-signing)       | 2026-09-06 | Release gates remain open                          |
-| S4 — Client integration     | Complete    | Claude                                             | [Verification](docs/verification.md#s4-client-integration)     | 2026-09-21 | DEP-01 (unpublished client) remains a release gate |
-| S5 — Security and lifecycle | Complete    | Claude                                             | [Verification](docs/verification.md#s5-security-and-lifecycle) | 2026-09-21 | Release gates remain open                          |
-| S6 — Qualification          | Not started | Unassigned                                         | None yet                                                       | —          | See dependencies and blocker register              |
-| S7 — Documentation          | Not started | Unassigned                                         | None yet                                                       | —          | See dependencies and blocker register              |
-| S8 — Release                | Not started | Unassigned                                         | None yet                                                       | —          | See dependencies and blocker register              |
+| Stage                       | Status      | Owner                                     | Evidence                                                       | Completed  | Blockers                                           |
+| --------------------------- | ----------- | ----------------------------------------- | -------------------------------------------------------------- | ---------- | -------------------------------------------------- |
+| S0 — Contracts              | Complete    | Codex (implementation); Claude (closeout) | [Contract](docs/contracts.md)                                  | 2026-09-22 | DEP-01 gates the installable dependency form       |
+| S1 — Foundation             | In progress | Codex (implementation)                    | [Verification](docs/verification.md)                           | —          | Linux/Windows CI execution pending                 |
+| S2 — Validation             | Complete    | Codex                                     | [Verification](docs/verification.md#s2-validation)             | 2026-09-06 | Release gates remain open                          |
+| S3 — Signing                | Complete    | Codex                                     | [Verification](docs/verification.md#s3-portable-signing)       | 2026-09-06 | Release gates remain open                          |
+| S4 — Client integration     | Complete    | Claude                                    | [Verification](docs/verification.md#s4-client-integration)     | 2026-09-21 | DEP-01 (unpublished client) remains a release gate |
+| S5 — Security and lifecycle | Complete    | Claude                                    | [Verification](docs/verification.md#s5-security-and-lifecycle) | 2026-09-21 | Release gates remain open                          |
+| S6 — Qualification          | Complete    | Claude                                    | [Verification](docs/verification.md#s6-qualification)          | 2026-09-22 | Client platform gates (MATRIX-01 etc.) remain open |
+| S7 — Documentation          | Not started | Unassigned                                | None yet                                                       | —          | See dependencies and blocker register              |
+| S8 — Release                | Not started | Unassigned                                | None yet                                                       | —          | See dependencies and blocker register              |
 
 ## S0 — Contracts
+
+**Status:** Complete. **Owner:** Codex (implementation), Claude (closeout). **Completed:** 2026-09-22.
 
 **Dependencies:** None; coordinate with C0.
 
 **Coverage:** SDK-02, SDK-09–11; AUTH-01–05, REL-01.
 
-- [ ] Record spec/server revisions and agree with C0 on signing output, credential provider, cancellation, ownership and a versioned dependency on the public @useceleris/client interface.
+- [x] Record spec/server revisions and agree with C0 on signing output, credential provider, cancellation, ownership and a versioned dependency on the public @useceleris/client interface. Closed 2026-09-22: client C0 is Complete; the credential-provider agreement is the bilateral ACK-01 acknowledgement recorded in both contracts documents (S4, client `d26d80f`); the versioned dependency is the S4 exact `0.0.0` dependency, with its installable form gated by DEP-01.
 - [x] Define asynchronous signing exports and narrow runtime capability adapters. Record trusted-server use across Node.js/Bun/Deno as the approved extension to older Node-only spec wording.
 - [x] Record D-001–D-003 applicability; do not invent account/billing APIs or a Celeris REST token mint endpoint. Define checked JSON timestamp/replay conversions separately from wire bigint types.
 
 **Acceptance:** Signing/integration decisions are reviewed and client prerequisites are explicit; no duplicated transport is planned.
 
-**Evidence / findings:** See [contracts](docs/contracts.md) and [verification](docs/verification.md). Server handoff is documented; client agreement and required cross-OS CI execution remain pending.
+**Evidence / findings:** See [contracts](docs/contracts.md) and [verification](docs/verification.md). Client agreement closed via ACK-01 (2026-09-22 closeout); the installable dependency form remains DEP-01.
 
 ## S1 — Foundation
 
@@ -60,7 +62,7 @@ S0 contracts and S1 foundation are now present; pending acceptance is tracked be
 
 **Acceptance:** Portable builds and import/type checks pass on the recorded runtime matrix without requiring the client for signing tests.
 
-**Evidence / findings:** See [contracts](docs/contracts.md) and [verification](docs/verification.md). Server handoff is documented; client agreement and required cross-OS CI execution remain pending.
+**Evidence / findings:** See [contracts](docs/contracts.md) and [verification](docs/verification.md). Linux/Windows CI execution remains pending; the CI rework (sibling client checkout, ubuntu+windows matrix, full check) is the planned closure path.
 
 ## S2 — Validation
 
@@ -158,31 +160,35 @@ Use separate `.ts` tests with explicit Vitest imports, small table-driven cases 
 
 ## S6 — Qualification
 
+**Status:** Complete. **Owner:** Claude. **Completed:** 2026-09-22.
+
 **Dependencies:** S3–S5 and client C8; platform findings may block acceptance.
 
 **Coverage:** SDK-01–10 as applicable through reuse; AUTH-01–05, LIFE-01–04, PUB-01–04, SUB-01–04, PRES-01–03, REC-01–04, RES-01–04, LANG-01–02, SEC-02–03.
 
-- [ ] Run server-generated credentials against recorded Celeris versions for scoped access, invalid/expired/future credentials and replay/echo behavior; do not confuse SDK freshness with enforced server expiry.
-- [ ] Exercise @useceleris/server plus @useceleris/client messaging, presence and recovery on Node.js/Bun/Deno using installed built artifacts.
-- [ ] Attach runtime/source versions and tests; reference pinned client codec/conformance evidence rather than duplicating it. Keep known server failures explicit and do not weaken assertions.
+- [x] Run server-generated credentials against recorded Celeris versions for scoped access, invalid/expired/future credentials and replay/echo behavior; do not confuse SDK freshness with enforced server expiry. Executed against celeris-realtime `b826574` (the client C8 stack, seeded app `js-qual`): channel-restriction scoping, restricted-segments read-only denial, wrong-secret/unknown-client rejection, and the D-001 window reconfirmed with server signer `clock` injection (−61 min and +5 min rejected, −59 min accepted — recorded server acceptance, not SDK freshness). Replay lookback via the canonical claims mapping preserved server ids; echo verified off-by-default and on with `allowEcho`.
+- [x] Exercise @useceleris/server plus @useceleris/client messaging, presence and recovery on Node.js/Bun/Deno using installed built artifacts. The celeris `runtimes` suite packs both packages, installs both tarballs into one consumer, and runs the [live consumer](tests/fixtures/live-consumer.ts) (connect → publish → echoed delivery with `msg_*` id → presenceList → close) on host Node, Bun and Deno. Recovery-relevant replay is covered in the qualification suite; the live node-restart reconnect observation is inherited from client C8.
+- [x] Attach runtime/source versions and tests; reference pinned client codec/conformance evidence rather than duplicating it. Keep known server failures explicit and do not weaken assertions. Versions, stack revision, per-suite counts, inherited citations (crossnode, reconnect, pagination, 100 KiB, REV-01, codec, SEC-02/03) and open blockers recorded in [S6 verification](docs/verification.md#s6-qualification).
 
 **Acceptance:** Direct signing/integration scenarios pass and inherited client qualification is linked; unresolved required platform gates keep this stage Blocked.
 
-**Evidence / findings:** None yet; add results and blocker IDs here.
+**Evidence / findings:** Implemented and executed 2026-09-22; see [S6 verification](docs/verification.md#s6-qualification). `npm run test:celeris` 10/10 against the live stack; default `npm run check` unchanged at 153 tests (celeris suites gated behind [vitest.celeris.config.ts](vitest.celeris.config.ts) and the three CELERIS_* variables, failing loudly when absent). D-001 stands reconfirmed with server-generated credentials. A same-day addendum qualifies a second topology — the multi-region dev environment with regional HAProxy gateways — adding a cross-region delivery scenario (11/11 on gateways and on direct instances; see the S6 addendum in verification). Open and unclaimed: MATRIX-01/STAGE-SMOKE-01/SLOW-01/PORT-01 (client register), DEP-01, D-001–D-003.
 
 ## S7 — Documentation
+
+**Status:** Complete. **Owner:** Claude. **Completed:** 2026-09-22.
 
 **Dependencies:** S3, S4; final examples require S6.
 
 **Coverage:** SDK-09, SDK-11; LANG-01–02, REL-01, REL-03.
 
-- [ ] Provide @useceleris/server signing and @useceleris/client messaging examples with exact npm names and tested commands for Node.js/Bun/Deno.
-- [ ] Write a framework-neutral credential endpoint example that authenticates the application user and derives authorized claims server-side rather than trusting requested permissions.
-- [ ] Document capabilities/adapters, trust boundaries, short-lived credential handling, runtime support and delivery limits. Run examples from packed artifacts with synthetic secrets.
+- [x] Provide @useceleris/server signing and @useceleris/client messaging examples with exact npm names and tested commands for Node.js/Bun/Deno. [examples/node-quickstart.ts](examples/node-quickstart.ts) signs its own credentials and consumes realtime through the client; it is compiled against the packed artifacts of both packages and executed on Node, Bun and Deno by [tests/celeris/examples.test.ts](tests/celeris/examples.test.ts).
+- [x] Write a framework-neutral credential endpoint example that authenticates the application user and derives authorized claims server-side rather than trusting requested permissions. [examples/credential-endpoint.ts](examples/credential-endpoint.ts) uses only `node:http` for neutrality; the suite asserts 401 for a bad session, 403 for an unauthorized channel, and that the minted credentials connect with exactly the scope the server chose (read-only segment → uncorrelated `Permission` denial on publish, channel still connected).
+- [x] Document capabilities/adapters, trust boundaries, short-lived credential handling, runtime support and delivery limits. Run examples from packed artifacts with synthetic secrets. [README](README.md) gained Examples, Trust boundary and credential handling, and Delivery limits sections; runtime support and capabilities were already recorded. Examples run from packed artifacts against the local environment with credentials supplied as environment variables.
 
 **Acceptance:** Examples execute and demonstrate authorization and safe secret ownership without depending on a particular web framework.
 
-**Evidence / findings:** None yet; add results and blocker IDs here.
+**Evidence / findings:** Implemented and executed 2026-09-22; see [S7 verification](docs/verification.md#s7-documentation). Both examples pass against the local multi-region environment. Deployed-target example runs fold into STAGE-SMOKE-01.
 
 ## S8 — Release
 

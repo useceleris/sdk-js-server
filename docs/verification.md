@@ -158,3 +158,65 @@ New evidence, all passing under `npm run check` (**153 tests in eleven suites**,
 Reuse boundaries recorded in [contracts — S5 security and lifecycle boundaries](contracts.md): SEC-02/SEC-03 and the bounded-writer/no-resend guarantees are client-owned and cited (client contracts, transport/channel suites, C8 live evidence), not re-tested.
 
 Reviewed both provider suites, the new fixture, the three touched foundation suites, the fixture helper, contracts, tracker and this evidence for readability and removable code; nothing beyond the planned tests was added. Blockers unchanged: DEP-01 (unpublished client; npm-link arrangement documented in S4), D-001–D-003, PORT-01 analogues deferred to S6. No dependency change, no server/backend change, no publication.
+
+## S6 qualification
+
+2026-09-22, macOS 26.7 (aarch64), host Node v24.13.0, Bun 1.1.29, Deno 2.9.6. Server base commit `23fec73` with the S4–S6 passes uncommitted; client baseline `d26d80f` plus its uncommitted simplification pass. Live target: the same three-node celeris-realtime stack the client C8 qualified — revision `b826574`, e2e compose `.infra/tests/compose.e2e.yaml` with the C8 host-port override (kafka host ports dropped, app nodes on 9101/9102/9103), seeded qualification app `js-qual` (account 900777) persisted in the stack's Postgres volume. Stack recipe and seeding: client `docs/testing.md`, "C8 Celeris qualification" — pointed to, not duplicated. Environment note: the Docker engine was down at stage start (the C9 daemon failure); starting Docker Desktop restored it and the `celeris_rt_e2e` project restarted healthy with the seed intact.
+
+New celeris-gated harness (excluded from the default run): [vitest.celeris.config.ts](../vitest.celeris.config.ts) and `npm run test:celeris`; suites fail loudly without `CELERIS_WS_URL`/`CELERIS_CLIENT_ID`/`CELERIS_SIGNING_SECRET`, never skip. Every live connection goes through the real S4 pipeline — `createSigner` → `createCredentialProvider` → the client's credential provider ([tests/celeris/helpers/environment.ts](../tests/celeris/helpers/environment.ts)).
+
+**`npm run test:celeris`: 10/10 passing in 2 suites (27.3 s) on 2026-09-22.**
+
+- [qualification.test.ts](../tests/celeris/qualification.test.ts) (9 scenarios): server-signed connect with greeting notices; wrong signing secret and unknown client id rejected as Transport — never an authorization label, serialized error secret-free; expired (−61 min) and future (+5 min) signer clocks rejected while −59 min is accepted — **D-001 reconfirmed with server-generated credentials** (the observed 60-minute window against the documented 60-second intent; recorded, not relied upon — SDK freshness never shortens server acceptance); channel outside the token restriction rejected, inside accepted; binary round-trip with `msg_*` ids and default echo suppression; `allowEcho: true` echo to the publisher; **restricted-segments claims** (`segment_id` array on the wire — a shape the client C8 never signed) verified live: read-only segment's publish resolves locally and the uncorrelated `Permission` denial arrives while the channel stays connected; replay via the canonical claims-callback lookback mapping redelivers history with byte-identical server ids; presence join notice and `presenceList` surface the server-signed `reference` claim.
+- [runtimes.test.ts](../tests/celeris/runtimes.test.ts) + [live-consumer fixture](../tests/fixtures/live-consumer.ts): both packages packed and installed into one isolated consumer (dual-tarball fixture), the consumer compiled ESM with both packages external, then run against the live stack on host Node, Bun and Deno (`--allow-net --allow-env`) — connect, publish, echoed delivery with a server id, presence count, clean close on every runtime.
+
+Inherited client evidence, cited rather than re-run (each justified): crossnode fanout and presence consistency (client `crossnode.test.ts`), live node-restart reconnect with growing capped lookback (client C8 observation), presence pagination edges incl. `from > to` (client `presence.test.ts`), 100 KiB round-trip and REV-01 id/dedup verification (client C8), codec/WIRE conformance (client pinned suites), SEC-02/SEC-03 (client-owned; S5 boundary record). Not claimed and still open: MATRIX-01 (eight-runtime rerun), STAGE-SMOKE-01 (deployed staging), SLOW-01 (slow-consumer load), PORT-01 (branded browsers/cross-OS), DEP-01, D-001–D-003.
+
+Local gate after the harness landed: `npm run build`, both typechecks (tooling now covers `tests/celeris/` and the celeris config), `format:check`, and the default suite — **153 tests in eleven suites**, unchanged in scope (celeris excluded). No `src/` change, no dependency change, no shared-helper behavior change (the live consumer compiles via its own tsdown invocation). Reviewed the two suites, helper, fixture, and both configs for readability; no server/backend change, no publication.
+
+### S6 addendum — multi-region dev environment — 2026-09-22
+
+Second qualification topology: the operator's local multi-region dev environment (celeris-realtime `b826574` working tree; three `celeris_rt_dev` instances at `ws://localhost:9001-9003`, fronted by three regional HAProxy gateways — us `:19001`, eu-1 `:19002`, eu-2 `:19003` — with per-region Kafka and sidecars). Credentials: the operator's dev app identity from the test-frontend's local store, supplied as environment variables at run time; no value recorded here or in any repo file. A first attempt with the frontend's stale `.env` identity was rejected `AppNotFound` — the live identity lives in the frontend's SQLite settings store.
+
+- Suite gained `secondaryWebsocketUrl()` (`CELERIS_WS_URL_SECONDARY`, mirroring the client convention) and an optional per-connection `baseUrl`, plus one new scenario: **cross-region delivery through the gateways** — publisher on the us gateway, subscriber on eu-1, server-signed claims on both; the subscriber received the payload with a `msg_*` id and presence listed its identity. First run through the regional entrypoint/HAProxy layer, which C8/S6 e2e coverage never touched (direct nodes only).
+- `npm run test:celeris` **11/11** against the region gateways (19001/19002) and **11/11** against the direct instances (9001/9002) on 2026-09-22. The D-001 window reproduced identically on the dev backend (−61 min rejected, −59 min accepted).
+- The `celeris_rt_e2e` stack had been removed by the operator before this addendum, so the e2e rerun of the extended suite is not recorded; the original S6 e2e evidence above (10/10, seeded `js-qual`) stands, and the only change since is the added scenario and helper plumbing.
+- The client package's own celeris suites were also run against the dev gateways — 22/22 in six suites, recorded in the client's verification log.
+- **STAGE-SMOKE-01 remains open**: this is a local `ws://` environment; deployed-staging smoke still requires `wss://realtime-staging.useceleris.com` with owner-supplied credentials.
+
+## MATRIX-01 — eight-runtime matrix rerun — 2026-09-22
+
+Executed with the client package in one session, against isolated runtime installations recreated in a persistent directory outside both repositories (no global installation modified) and selected with `CELERIS_RUNTIME_MATRIX`: Node v22.15.0 (floor), v22.23.2, v24.20.0, v26.8.1; Bun 1.3.0 (floor), 1.4.2; Deno 2.5.0 (floor), 2.9.6.
+
+**`npm run check` on 2026-09-22, macOS 26.7 (aarch64): 185 tests in 11 suites** — up from 153 on the default three-runtime selection, because the packed-consumer, signing-vector, capability and provider consumer suites each iterate the matrix (CommonJS consumers skip Deno by design). Build, both typechecks and formatting passed in the same run. The declared Bun floor is now genuinely exercised; earlier passes used host Bun 1.1.29, below the floor.
+
+This satisfies the runtime-matrix half of S1's acceptance ("portable builds and import/type checks pass on the recorded runtime matrix"); the remaining S1 item is Linux/Windows CI execution. The client's matching entry records 391 tests in 21 suites on the same eight runtimes.
+
+## Main qualification run — local multi-region environment — 2026-09-22
+
+The local dev environment is the primary test target. `npm run test:celeris` against the regional gateways (`CELERIS_WS_URL=ws://localhost:19001`, `CELERIS_WS_URL_SECONDARY=ws://localhost:19002`; credentials supplied as environment variables, never recorded): **11 tests in 2 suites (36.3 s), all passing**, on macOS 26.7 with host Node v24.13.0 against celeris-realtime `b826574`.
+
+Covered: server-signed connect and greetings; wrong-secret and unknown-client rejection as Transport; the D-001 window via signer `clock` injection; channel-restriction scoping; binary round-trip with server-assigned ids and default echo suppression; `allowEcho`; restricted-segment read-only Permission denial; replay with preserved ids; presence for a signed `reference`; cross-region delivery through the gateways; and the installed-artifact live consumer on Node, Bun and Deno.
+
+## S7 documentation
+
+2026-09-22, macOS 26.7, host Node v24.13.0, against the local multi-region environment (celeris-realtime `b826574`). Server base commit `23fec73` plus the uncommitted S4–S7 work; client baseline `d26d80f` plus its uncommitted passes.
+
+Two executable examples, both compiled against the **packed artifacts** of this package and the sibling client (no source imports) and run by the new [tests/celeris/examples.test.ts](../tests/celeris/examples.test.ts) — **2 tests passing**:
+
+- [node-quickstart.ts](../examples/node-quickstart.ts): trusted server signs its own credentials through `createSigner` + `createCredentialProvider`, connects, subscribes, publishes, receives its own echo and reads presence. Executed on Node, Bun and Deno from the installed tarballs; each run asserts the `example: ok delivered=… present=…` marker.
+- [credential-endpoint.ts](../examples/credential-endpoint.ts): the framework-neutral pattern (only `node:http`, so the handler body ports to any framework). The suite spawns it as a child process and asserts **401** for an unauthenticated request, **403** for a channel the demo user may not access, and **200** for the authorized case — then drives a real connection with the minted credentials and confirms the server-chosen scope holds: the read-only `chat` segment yields an uncorrelated `Permission` denial on publish while the channel stays connected. Requested permissions are never trusted; the endpoint derives them from its own user record.
+
+README gained Examples, Trust boundary and credential handling, and Delivery limits sections (trust boundary, short-lived opaque credentials, least-privilege scoping, the server's own acceptance window per D-001, publish-acceptance semantics, writer/message bounds, replay-window caveats, and payload opacity). EXAMPLES.md snippets remain guarded by the drift suite in the default run.
+
+Blockers unchanged: DEP-01; deployed-target example runs remain STAGE-SMOKE-01.
+
+## CI qualification stack and credential simplification — 2026-09-22
+
+The live suites now target a committed stack shared with the client package ([sdk-js-client/.ci/compose.yaml](../../sdk-js-client/.ci/compose.yaml)): two realtime nodes behind the real HAProxy entrypoint and its sidecar, with Kafka, Redis, Postgres (schema + seeded app `js-ci`) and ClickHouse, all from prebuilt GHCR images. **Verified 2026-09-22: 12 tests in 3 suites pass against it**, alongside the client package's 26.
+
+- `CELERIS_WS_URL_SECONDARY` was removed. The cross-region test it existed for is gone; connections reach the stack through one entrypoint, which distributes them across nodes, and the remaining suites assert the behavior that matters (delivery, scoping, replay, presence) without naming a second endpoint.
+- Credentials and the target URL come from a gitignored `.env` loaded by [vitest.celeris.config.ts](../vitest.celeris.config.ts). Real environment variables take precedence, so CI supplies them directly and a deployed target needs only different values — no code change.
+- CI was rebuilt: pushes on `main` and pull requests only, a concurrency group that cancels superseded runs, a `check` job running the full gate on ubuntu and windows, and a `celeris` job that starts the stack and runs the qualification suites. Both jobs check out the sibling client and install it from the working tree (DEP-01); the live job runs on `ubuntu-24.04-arm` because the realtime image publishes arm64 only.
+
+Recorded finding: a stale _locally cached_ realtime image (2026-08-10, predating server-assigned message ids) makes every delivery test fail with the SDK's REV-01 `ProtocolError`. Docker falls back to the cache when an unauthenticated pull is denied, so authenticate before pulling; the current published tags are unaffected and the compose defaults to `:prod`.

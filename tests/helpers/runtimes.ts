@@ -1,46 +1,27 @@
+import { z } from "zod";
 import { runCommand } from "./commands";
 
-export type RuntimeKind = "node" | "bun" | "deno";
-export interface Runtime {
-  name: string;
-  kind: RuntimeKind;
-  command: string;
-}
-
-function isRuntime(value: unknown): value is Runtime {
-  if (typeof value !== "object" || value === null) {
-    return false;
-  }
-  const entry = value as Record<string, unknown>;
-  return (
-    typeof entry.name === "string" &&
-    entry.name.length > 0 &&
-    typeof entry.command === "string" &&
-    entry.command.length > 0 &&
-    (entry.kind === "node" || entry.kind === "bun" || entry.kind === "deno")
-  );
-}
+const runtimeSchema = z.object({
+  name: z.string().min(1),
+  kind: z.enum(["node", "bun", "deno"]),
+  command: z.string().min(1),
+});
+export type Runtime = z.infer<typeof runtimeSchema>;
 
 export function readRuntimeMatrix(): Runtime[] {
   const configuration = process.env.CELERIS_RUNTIME_MATRIX;
-  const entries: unknown = configuration
-    ? JSON.parse(configuration)
-    : [
-        { name: "node", kind: "node", command: process.execPath },
-        { name: "bun", kind: "bun", command: "bun" },
-        { name: "deno", kind: "deno", command: "deno" },
-      ];
-  if (!Array.isArray(entries) || entries.length === 0) {
-    throw new Error("Runtime matrix must be a nonempty array");
-  }
-  const runtimes: Runtime[] = [];
-  for (const entry of entries) {
-    if (!isRuntime(entry)) {
-      throw new Error("Invalid runtime matrix entry");
-    }
-    runtimes.push(entry);
-  }
-  return runtimes;
+  return z
+    .array(runtimeSchema)
+    .min(1)
+    .parse(
+      configuration
+        ? JSON.parse(configuration)
+        : [
+            { name: "node", kind: "node", command: process.execPath },
+            { name: "bun", kind: "bun", command: "bun" },
+            { name: "deno", kind: "deno", command: "deno" },
+          ],
+    );
 }
 
 export function runConsumer(

@@ -33,7 +33,8 @@
     "format:check": "prettier --check .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "check": "npm run build && npm run typecheck && npm run format:check && npm test"
+    "check": "npm run build && npm run typecheck && npm run format:check && npm test",
+    "test:celeris": "vitest run --config vitest.celeris.config.ts"
   },
   "devDependencies": {
     "@types/node": "26.4.1",

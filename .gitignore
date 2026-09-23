@@ -4,3 +4,4 @@ dist/
 .vitest/
 coverage/
 *.tgz
+.env

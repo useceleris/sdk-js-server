@@ -27,6 +27,25 @@ Credentials contain opaque payload/signature strings, not a URL or expiry guaran
 
 `createCredentialProvider({ signer, claims })` returns the client SDK's asynchronous `CredentialProvider` for trusted servers that consume realtime themselves: each connection attempt calls `claims(request)` freshly and signs with a fresh timestamp, an aborted `request.signal` rejects before signing, and nothing from the untrusted request widens scope beyond what `claims()` returns. The claims callback decides the `replayLookbackMs → replay` mapping (see [EXAMPLES.md](EXAMPLES.md)). The dependency on `@useceleris/client` is type-only at runtime — the server bundle contains no client transport code — and browsers still never see this package or its secrets. Failures reuse the same fixed safe errors as the signer; errors are identified by their stable `code` string (`"Configuration"`, `"SigningFailed"`), not by exported classes.
 
+## Examples
+
+Two runnable examples live in [examples/](examples), both executed against a live stack by the celeris test suite:
+
+- [node-quickstart.ts](examples/node-quickstart.ts) — a trusted server signing its own credentials and consuming realtime through `@useceleris/client` (Node.js, Bun and Deno).
+- [credential-endpoint.ts](examples/credential-endpoint.ts) — the framework-neutral pattern every browser or mobile application needs: authenticate your user, derive the authorized claims server-side, sign fresh, return `{ payload, signature }`. A permission requested by the client is never trusted. The handler body ports unchanged to Express, Fastify, Hono, Nitro or a serverless function.
+
+More usage, including the full claims surface, is in [EXAMPLES.md](EXAMPLES.md).
+
+## Trust boundary and credential handling
+
+The signing secret belongs only to a trusted server process: never a browser, mobile app, or any bundle shipped to a user. Portable cryptography does not make an environment trusted — this package is importable in a browser bundler, and doing so would leak the secret. The client package never depends on this one, and its published artifact contains no signing API (asserted by the package suite).
+
+Credentials are short-lived and opaque: sign per request or per connection attempt, never cache, never backdate, and pass `payload`/`signature` through unchanged. Scope every token to the narrowest channel and segment permissions the user actually needs; `kind: "all"` is an explicit opt-in, never a default. The server enforces its own acceptance window, which is not shortened by signing freshly — see D-001 in [STAGES.md](STAGES.md).
+
+## Delivery limits
+
+The realtime client owns delivery: a publish resolves on local acceptance, not on server receipt, and there is no offline queue, automatic resend, or acknowledgement API. Commands are bounded at 128 KiB each with a 64-command writer window, and incoming transport messages at 1 MiB. Replay is a bounded lookback window, not a durable cursor, so gaps and duplicates remain possible after recovery and are declared through the client's recovery event. Payloads are opaque bytes — JSON, MessagePack, protobuf or anything else round-trips unchanged.
+
 ## Development
 
 Use npm and a supported development Node release (Node 24 recommended). Install dependencies using `npm install`; new development dependencies use `npm install --save-dev --save-exact name@latest`; authorized runtime dependencies use `npm install --save-exact name@latest`. Runtime dependencies are Zod for validation, @noble/hashes for HMAC-SHA512, @scure/base for Base64/hex encoding, and @useceleris/client for the credential-provider types (type-only at runtime). Commit npm-generated dependency metadata and lockfile.
