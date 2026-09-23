@@ -81,7 +81,6 @@ const signer = createSigner({
 });
 
 const client = createClient({
-  baseUrl: "wss://realtime.example.com",
   credentialProvider: createCredentialProvider({
     signer,
     claims: (request) => ({

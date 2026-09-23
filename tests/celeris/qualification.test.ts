@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import type { Message } from "@useceleris/client";
 import {
   allPermissionClaims,
   connectedChannel,
@@ -115,9 +114,9 @@ describe("celeris messaging, replay and presence through the provider", () => {
     const claims = allPermissionClaims(reference);
     const publisher = await connectedChannel(reference, claims);
     const receiver = await connectedChannel(reference, claims);
-    const publisherSaw: Message[] = [];
-    publisher.segment("chat").onMessage((message) => {
-      publisherSaw.push(message);
+    const publisherSaw: string[] = [];
+    publisher.segment("chat").onMessage((_payload, metadata) => {
+      publisherSaw.push(metadata.messageId);
     });
     publisher.segment("chat").subscribe();
     receiver.segment("chat").subscribe();
@@ -189,8 +188,8 @@ describe("celeris messaging, replay and presence through the provider", () => {
     const publisher = await connectedChannel(reference, claims);
     const liveReceiver = await connectedChannel(reference, claims);
     const liveIds: string[] = [];
-    liveReceiver.segment("history").onMessage((message) => {
-      liveIds.push(message.messageId);
+    liveReceiver.segment("history").onMessage((_payload, metadata) => {
+      liveIds.push(metadata.messageId);
     });
     liveReceiver.segment("history").subscribe();
     await settle();
@@ -216,9 +215,9 @@ describe("celeris messaging, replay and presence through the provider", () => {
           ? { lookbackMs: request.replayLookbackMs }
           : { lookbackMs: 60_000 },
     }));
-    const replayed: Message[] = [];
-    replayReceiver.segment("history").onMessage((message) => {
-      replayed.push(message);
+    const replayed: { payload: Uint8Array; messageId: string }[] = [];
+    replayReceiver.segment("history").onMessage((payload, metadata) => {
+      replayed.push({ payload, messageId: metadata.messageId });
     });
     replayReceiver.segment("history").subscribe();
 

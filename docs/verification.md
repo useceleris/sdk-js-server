@@ -220,3 +220,12 @@ The live suites now target a committed stack shared with the client package ([sd
 - CI was rebuilt: pushes on `main` and pull requests only, a concurrency group that cancels superseded runs, a `check` job running the full gate on ubuntu and windows, and a `celeris` job that starts the stack and runs the qualification suites. Both jobs check out the sibling client and install it from the working tree (DEP-01); the live job runs on `ubuntu-24.04-arm` because the realtime image publishes arm64 only.
 
 Recorded finding: a stale _locally cached_ realtime image (2026-08-10, predating server-assigned message ids) makes every delivery test fail with the SDK's REV-01 `ProtocolError`. Docker falls back to the cache when an unauthenticated pull is denied, so authenticate before pulling; the current published tags are unaffected and the compose defaults to `:prod`.
+
+## Client listener split carried through — 2026-09-23
+
+The client package's C11 stage changed `Segment.onMessage` to hand listeners `(payload, metadata)` and replaced its exported `Message` type with `MessageMetadata` (client decision **MSG-01**), and defaulted `baseUrl` to the production endpoint (**ENDPOINT-01**). This package's own public surface is unchanged — it consumes the client, it does not re-export its messaging types — so the work here was consumption only:
+
+- [qualification](../tests/celeris/qualification.test.ts), the live [environment helper](../tests/celeris/helpers/environment.ts) (which now builds one `DeliveredMessage` object from the two listener arguments) and the [live consumer fixture](../tests/fixtures/live-consumer.ts) moved to the two-argument listener.
+- [node-quickstart](../examples/node-quickstart.ts) uses the client's new `readText` helper instead of constructing a `TextDecoder`, and EXAMPLES.md dropped its `baseUrl` line. The quickstart keeps an explicit `baseUrl` from `CELERIS_WS_URL`, because it runs against the local stack rather than production.
+
+**Verified 2026-09-23:** `npm run check` **153 tests in 11 suites** and `npm run test:celeris` **12 tests in 3 suites**, both green against the local multi-region stack.

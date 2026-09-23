@@ -46,11 +46,11 @@ async function exerciseLiveStack(): Promise<unknown> {
         () => reject(new Error("Timed out waiting for the echoed delivery.")),
         20_000,
       );
-      chat.onMessage((message) => {
+      chat.onMessage((payload, metadata) => {
         clearTimeout(timer);
         resolve({
-          id: message.messageId,
-          body: new TextDecoder().decode(message.payload),
+          id: metadata.messageId,
+          body: new TextDecoder().decode(payload),
         });
       });
     },
