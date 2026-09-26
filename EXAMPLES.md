@@ -1,6 +1,6 @@
 # @useceleris/server — consumer examples
 
-> Every `ts` snippet below is type-checked against the public surface on each `npm run check` (`tests/foundation/examples-drift.test.ts`); `createSigner` shipped with S3 and `createCredentialProvider` with S4. This file mirrors the surface fixed in the client [contracts](../sdk-js-client/docs/contracts.md) and changes in the same commit as any surface change. The signing secret lives only on trusted servers (Node.js, Bun, Deno) — never in a browser or mobile bundle.
+> Every `ts` snippet below is type-checked against the public surface on each `npm run check` (`tests/foundation/examples-drift.test.ts`), and changes in the same commit as any surface change. The signing secret lives only on trusted servers (Node.js, Bun, Deno) — never in a browser or mobile bundle.
 
 ## Sign credentials (shipped)
 

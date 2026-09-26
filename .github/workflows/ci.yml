@@ -6,17 +6,12 @@ on:
 
 permissions:
   contents: read
-  packages: read
 
 # A newer run for the same branch or pull request cancels the older one.
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
   cancel-in-progress: true
 
-# DEP-01: @useceleris/client is not published yet, so its declared 0.0.0
-# dependency cannot resolve from the registry. Both jobs check the sibling
-# out and install it from the working tree. Replace these steps with a plain
-# install once the client publishes.
 jobs:
   # Unit, validation, provider and packaged-consumer suites. No service stack.
   check:
@@ -29,90 +24,18 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
-        with:
-          path: sdk-js-server
-      - uses: actions/checkout@v7
-        with:
-          repository: useceleris/sdk-js-client
-          path: sdk-js-client
-          token: ${{ secrets.SDK_CLIENT_READ_TOKEN || github.token }}
       - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
-          cache-dependency-path: sdk-js-server/package-lock.json
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
       - uses: denoland/setup-deno@v2
         with:
           deno-version: latest
-      - name: Build the sibling client
-        working-directory: sdk-js-client
-        run: |
-          npm install
-          npm run build
-      - name: Install with the local client
-        working-directory: sdk-js-server
-        run: |
-          npm pkg set "dependencies.@useceleris/client=file:../sdk-js-client"
-          npm install --no-package-lock
-      # Build, both typechecks, formatting and the suites. The packed-artifact
-      # suites pack both sibling repositories.
-      - name: Check
-        working-directory: sdk-js-server
-        run: npm run check
-
-  # Live qualification against two realtime nodes behind HAProxy, using the
-  # stack defined in the client repository (.ci/compose.yaml).
-  # arm64: the realtime image publishes linux/arm64 only.
-  celeris:
-    runs-on: blacksmith-4vcpu-ubuntu-2404-arm
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          path: sdk-js-server
-      - uses: actions/checkout@v7
-        with:
-          repository: useceleris/sdk-js-client
-          path: sdk-js-client
-          token: ${{ secrets.SDK_CLIENT_READ_TOKEN || github.token }}
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 24
-          cache: npm
-          cache-dependency-path: sdk-js-server/package-lock.json
-      - uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build the sibling client
-        working-directory: sdk-js-client
-        run: |
-          npm install
-          npm run build
-      - name: Install with the local client
-        working-directory: sdk-js-server
-        run: |
-          npm pkg set "dependencies.@useceleris/client=file:../sdk-js-client"
-          npm install --no-package-lock
-      - name: Start the Celeris stack
-        working-directory: sdk-js-client
-        run: docker compose -f .ci/compose.yaml up -d --wait
-      - name: Qualification suites
-        working-directory: sdk-js-server
-        env:
-          CELERIS_WS_URL: ws://localhost:19001
-          CELERIS_CLIENT_ID: js-ci
-          CELERIS_SIGNING_SECRET: js-ci-signing-secret
-        run: npm run test:celeris
-      - name: Stack logs
-        if: failure()
-        working-directory: sdk-js-client
-        run: docker compose -f .ci/compose.yaml logs --tail 200
-      - name: Stop the Celeris stack
-        if: always()
-        working-directory: sdk-js-client
-        run: docker compose -f .ci/compose.yaml down -v
+      # @useceleris/client resolves from the registry like any other
+      # dependency; it publishes ahead of this package.
+      - run: npm install
+      # Build, both typechecks, formatting and the suites.
+      - run: npm run check

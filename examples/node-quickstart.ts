@@ -3,7 +3,7 @@
 // through @useceleris/client — the pattern for a backend worker, not a
 // browser: the signing secret never leaves this process.
 import { createCredentialProvider, createSigner } from "@useceleris/server";
-import { createClient, readText } from "@useceleris/client";
+import { createClient, readText, ServerError } from "@useceleris/client";
 
 const signer = createSigner({
   clientId: process.env.CELERIS_CLIENT_ID!,
@@ -33,7 +33,14 @@ const client = createClient({
 });
 
 const channel = client.channel(channelReference);
-channel.events().onError((error) => console.log("error:", error.code));
+channel
+  .events()
+  .onError((error) =>
+    console.log(
+      "error:",
+      error instanceof ServerError ? error.type : error.code,
+    ),
+  );
 
 await channel.connect();
 

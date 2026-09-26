@@ -3,6 +3,7 @@ import {
   timestampSchema,
   type TokenPayload,
 } from "./claims";
+
 import { ConfigurationError } from "./configuration-error";
 
 export function prepareTokenPayload(

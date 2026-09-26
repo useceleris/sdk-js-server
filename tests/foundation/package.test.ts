@@ -11,6 +11,7 @@ const expectedFiles = [
   "dist/index.cjs",
   "dist/index.d.cts",
   "README.md",
+  "LICENSE",
   "package.json",
 ];
 

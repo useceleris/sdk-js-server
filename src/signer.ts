@@ -7,6 +7,7 @@ import {
   signingSecretSchema,
   type SigningClaims,
 } from "./claims";
+
 import { ConfigurationError } from "./configuration-error";
 import { prepareTokenPayload } from "./validation";
 
@@ -23,6 +24,7 @@ export type SignedCredentials = {
   readonly payload: string;
   readonly signature: string;
 };
+
 export type Signer = {
   sign(claims: SigningClaims): SignedCredentials;
 };

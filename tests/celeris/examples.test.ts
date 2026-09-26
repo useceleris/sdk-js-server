@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
 import { spawn, type ChildProcess } from "node:child_process";
 import { join } from "node:path";
-import { createClient } from "@useceleris/client";
+import { createClient, ServerError } from "@useceleris/client";
 import { repositoryRoot, runCommand, runNpm } from "../helpers/commands";
 import { usePackageFixture } from "../helpers/package-fixture";
 import { readRuntimeMatrix } from "../helpers/runtimes";
@@ -123,7 +123,9 @@ describe("celeris examples", () => {
       credentialProvider: async () => credentials,
     }).channel(endpointChannel);
     const denials: string[] = [];
-    reader.events().onError((error) => denials.push(error.code));
+    reader.events().onError((error) => {
+      if (error instanceof ServerError) denials.push(error.type);
+    });
     await reader.connect();
     reader.segment("chat").subscribe();
     await new Promise((resolve) => setTimeout(resolve, 1_500));
@@ -132,7 +134,7 @@ describe("celeris examples", () => {
       .segment("chat")
       .publish({ payload: new TextEncoder().encode("should be denied") });
     await new Promise((resolve) => setTimeout(resolve, 3_000));
-    expect(denials).toContain("Permission");
+    expect(denials).toContain("PermissionDeniedError");
     expect(reader.state).toBe("connected");
 
     await reader.close();

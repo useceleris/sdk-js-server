@@ -5,6 +5,7 @@ import {
   type Client,
   type CredentialRequest,
   type MessageMetadata,
+  type PresenceEvent,
   type Segment,
   type ServerNotice,
 } from "@useceleris/client";
@@ -142,6 +143,20 @@ export function nextError(
     description,
   );
 } // end function nextError
+
+export function nextPresence(
+  segment: Segment,
+  predicate: (event: PresenceEvent) => boolean,
+  description = "a presence notification",
+  timeoutMs = 15_000,
+): Promise<PresenceEvent> {
+  return waitFor<PresenceEvent>(
+    (deliver) => segment.onPresence(deliver),
+    predicate,
+    timeoutMs,
+    description,
+  );
+} // end function nextPresence
 
 export function nextNotice(
   channel: Channel,

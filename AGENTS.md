@@ -1,10 +1,11 @@
 # Server SDK agent instructions
 
-Read [CONVENTIONS.md](CONVENTIONS.md) first — simplicity and maintainability are paramount and bind every change. Then read [STAGES.md](STAGES.md), [contracts](docs/contracts.md), [runtime support](docs/runtime-support.md), and [verification](docs/verification.md).
+Read [CONVENTIONS.md](CONVENTIONS.md) first — simplicity and maintainability are paramount and bind every change. Then read [runtime support](docs/runtime-support.md) and [code conventions](docs/code-conventions.md).
+
+The protocol contract, the recorded decisions this package's API traces to, and the evidence behind them live in the private `celeris-sdk-specs` repository. Consult it before changing anything on the public surface.
 
 - Never create a git commit without the user's explicit consent in the current conversation. Leave changes uncommitted and ask; approval of a plan or edit is not commit consent.
-- Segment model (SEG-01, owner directive 2026-09-20): in the client SDK, one `Channel` is one WebSocket client carrying all of that channel's segments; connecting auto-joins the default segment `"default"`; `Segment` handlers are proxies sharing the channel connection, never sockets of their own. Server-relevant consequences: signing claims scope segments explicitly (`SegmentPermissions`), `PUB` auto-joins a segment server-side, `PRES_SUB` force-joins for messages, and read access is evaluated at join — a write-only token is a member that receives nothing. Keep S4+ examples and the credential provider consistent with this model; see the client [contracts — Segment model](../sdk-js-client/docs/contracts.md).
-- Work only in the authorized stages. S0/S1 supply contracts and tooling, not a signer or client integration.
+- Segment model (SEG-01, owner directive 2026-09-20): in the client SDK, one `Channel` is one WebSocket client carrying all of that channel's segments; connecting auto-joins the default segment `"default"`; `Segment` handlers are proxies sharing the channel connection, never sockets of their own. Server-relevant consequences: signing claims scope segments explicitly (`SegmentPermissions`), `PUB` auto-joins a segment server-side, `PRES_SUB` force-joins for messages, and read access is evaluated at join — a write-only token is a member that receives nothing. Keep the examples and the credential provider consistent with this model; the full segment model is recorded in the specifications repository.
 - Author code and fixtures in TypeScript `.ts` files. JavaScript extensions belong only to generated package/temporary consumer output. Use tsdown CLI directly; no custom build script.
 - Keep source/runtime dependencies and public types portable. Node APIs are allowed only in build/test tooling, never `src/`.
 - Add dependencies only with `npm install --save-dev --save-exact package@latest` (omit `--save-dev` for an explicitly authorized runtime dependency). Let npm write versions and the lockfile; never hand-edit dependency versions. Use `npm install` to restore existing lockfile state and verify no unexpected diff.
@@ -12,7 +13,6 @@ Read [CONVENTIONS.md](CONVENTIONS.md) first — simplicity and maintainability a
 - Do not introduce deprecated APIs in source, tests, fixtures or tooling. Check installed type declarations and official migration guidance when choosing or replacing APIs; use supported replacements instead of suppressing deprecation warnings. Include deprecation checks in code review. For Vitest exception assertions, use `toThrow`, not the deprecated `toThrowError` alias.
 - Keep real credentials out of fixtures, errors and logs.
 - Keep the server → client dependency direction; add the client dependency only in S4. Other repositories remain read-only unless separately authorized.
-- Update stage evidence truthfully. Pending client contract acceptance and release blockers cannot be checked off from local tests.
 - Run `npm run check` with the full runtime matrix before marking qualification complete. Do not publish this private foundation package.
 
 ## Required readability gate

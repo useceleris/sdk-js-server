@@ -7,7 +7,7 @@ if (existsSync(".env")) process.loadEnvFile(".env");
 
 // Celeris acceptance suites run against a real server stack and stay
 // separate from the local evidence in vitest.config.ts. Stack recipe:
-// ../sdk-js-client/docs/testing.md, "C8 Celeris qualification".
+// the same live Celeris stack the client package qualifies against.
 export default defineConfig({
   test: {
     include: ["tests/celeris/**/*.test.ts"],

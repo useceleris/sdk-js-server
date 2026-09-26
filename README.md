@@ -40,17 +40,17 @@ More usage, including the full claims surface, is in [EXAMPLES.md](EXAMPLES.md).
 
 The signing secret belongs only to a trusted server process: never a browser, mobile app, or any bundle shipped to a user. Portable cryptography does not make an environment trusted — this package is importable in a browser bundler, and doing so would leak the secret. The client package never depends on this one, and its published artifact contains no signing API (asserted by the package suite).
 
-Credentials are short-lived and opaque: sign per request or per connection attempt, never cache, never backdate, and pass `payload`/`signature` through unchanged. Scope every token to the narrowest channel and segment permissions the user actually needs; `kind: "all"` is an explicit opt-in, never a default. The server enforces its own acceptance window, which is not shortened by signing freshly — see D-001 in [STAGES.md](STAGES.md).
+Credentials are short-lived and opaque: sign per request or per connection attempt, never cache, never backdate, and pass `payload`/`signature` through unchanged. Scope every token to the narrowest channel and segment permissions the user actually needs; `kind: "all"` is an explicit opt-in, never a default. The server enforces its own acceptance window, which is not shortened by signing freshly.
 
 ## Delivery limits
 
-The realtime client owns delivery: a publish resolves on local acceptance, not on server receipt, and there is no offline queue, automatic resend, or acknowledgement API. Commands are bounded at 128 KiB each with a 64-command writer window, and incoming transport messages at 1 MiB. Replay is a bounded lookback window, not a durable cursor, so gaps and duplicates remain possible after recovery and are declared through the client's recovery event. Payloads are opaque bytes — JSON, MessagePack, protobuf or anything else round-trips unchanged.
+The realtime client owns delivery: a publish resolves on local acceptance, not on server receipt, and there is no offline queue, automatic resend, or acknowledgement API. Commands are bounded at 2 MiB each — the server's transport ceiling — with a 64-command writer window; each plan caps publish payloads lower, and the server rejects anything over that cap with a `MessageSizeLimitError`. Received messages are never size-checked. Replay is a bounded lookback window, not a durable cursor, so gaps and duplicates remain possible after recovery and are declared through the client's recovery event. Payloads are opaque bytes — JSON, MessagePack, protobuf or anything else round-trips unchanged.
 
 ## Development
 
 Use npm and a supported development Node release (Node 24 recommended). Install dependencies using `npm install`; new development dependencies use `npm install --save-dev --save-exact name@latest`; authorized runtime dependencies use `npm install --save-exact name@latest`. Runtime dependencies are Zod for validation, @noble/hashes for HMAC-SHA512, @scure/base for Base64/hex encoding, and @useceleris/client for the credential-provider types (type-only at runtime). Commit npm-generated dependency metadata and lockfile.
 
-Until `@useceleris/client` publishes (DEP-01), its `0.0.0` dependency cannot be fetched from a registry: after cloning, run `npm link ../sdk-js-client` (sibling checkout, built) before `npm install`-dependent workflows, and give CI a sibling checkout plus the same link step. The packed-artifact test suites do not rely on the link — they build and pack both repositories and install both tarballs into their isolated consumers. S8 replaces this arrangement with the published, installable client version.
+`@useceleris/client` is an ordinary registry dependency, used for its types. It releases ahead of this package, so a version of it must be published before a matching version of this one.
 
 ```sh
 npm install
@@ -66,15 +66,18 @@ All authored code and test fixtures use `.ts`; tsdown generates package JavaScri
 
 Tests require Node, Bun and Deno. Missing executables fail qualification. See [runtime support](docs/runtime-support.md) for matrix configuration. Build/test orchestration uses Node; published code does not.
 
-`npm test` builds and packs fresh artifacts of this package and the sibling client, installs both into an isolated consumer, and checks actual runtime imports. It verifies fixed signing vectors through installed ESM/CommonJS artifacts as well as safe imports. ESM and CommonJS exports include corresponding declarations; internal paths are not public.
+`npm test` builds and packs a fresh artifact of this package, installs it into an isolated consumer exactly as a user would, and checks actual runtime imports. It verifies fixed signing vectors through installed ESM/CommonJS artifacts as well as safe imports. ESM and CommonJS exports include corresponding declarations; internal paths are not public.
 
 ## Documents
 
-- [Implementation stages](STAGES.md)
-- [Server contract](docs/contracts.md)
 - [Runtime support](docs/runtime-support.md)
-- [Verification evidence](docs/verification.md)
 - [Code readability conventions](docs/code-conventions.md)
+- [Consumer examples](EXAMPLES.md)
+- [Security policy](SECURITY.md)
+
+## License
+
+[Apache 2.0](LICENSE).
 
 Trusted-server signing secrets must never be sent to browsers or end-user applications. Portable cryptographic libraries do not make an environment trusted. No license or publication approval is implied by this private scaffold.
 

@@ -1,12 +1,8 @@
 import { afterAll, beforeAll } from "vitest";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { join } from "node:path";
 import { repositoryRoot, runNpm } from "./commands";
-
-// The unpublished @useceleris/client dependency (DEP-01) is satisfied from
-// the sibling repository's packed tarball, never from a registry.
-const clientRepositoryRoot = resolve(repositoryRoot, "../sdk-js-client");
 
 interface PackedArtifact {
   filename: string;
@@ -81,9 +77,7 @@ export function compileConsumers(consumerDirectory: string): void {
 
 function prepareFixture(temporaryDirectory: string): PackageFixture {
   runNpm(["run", "build"]);
-  runNpm(["run", "build"], clientRepositoryRoot);
   const artifact = packPackage(temporaryDirectory);
-  const clientArtifact = packPackage(temporaryDirectory, clientRepositoryRoot);
   const consumerDirectory = join(temporaryDirectory, "consumer");
 
   mkdirSync(consumerDirectory, { recursive: true });
@@ -91,8 +85,8 @@ function prepareFixture(temporaryDirectory: string): PackageFixture {
     join(consumerDirectory, "package.json"),
     JSON.stringify({ private: true, type: "module" }),
   );
-  // One install with both tarballs so the client dependency resolves from
-  // the provided artifact instead of a registry lookup.
+  // Install this package's tarball exactly as a consumer would; npm resolves
+  // its @useceleris/client dependency from the registry.
   runNpm(
     [
       "install",
@@ -100,7 +94,6 @@ function prepareFixture(temporaryDirectory: string): PackageFixture {
       "--no-audit",
       "--no-fund",
       join(temporaryDirectory, artifact.filename),
-      join(temporaryDirectory, clientArtifact.filename),
     ],
     consumerDirectory,
   );

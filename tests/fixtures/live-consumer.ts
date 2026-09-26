@@ -70,7 +70,7 @@ async function exerciseLiveStack(): Promise<unknown> {
     ok: message.body === "live-consumer" && message.id.length > 0,
     delivered: 1,
     idAssigned: message.id.startsWith("msg_"),
-    presentCount: Number(page.total),
+    presentCount: page.total,
   };
 }
 

@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
+import { ServerError } from "@useceleris/client";
 import {
   allPermissionClaims,
   connectedChannel,
   nextError,
   nextMessage,
   nextNotice,
+  nextPresence,
   qualificationClient,
   uniqueChannelReference,
 } from "./helpers/environment";
@@ -170,13 +172,15 @@ describe("celeris messaging, replay and presence through the provider", () => {
       },
     });
 
-    // Publish resolves locally; the denial arrives later, uncorrelated.
+    // Publish resolves locally; the denial arrives later, naming the segment.
     await readOnly.segment("chat").publish({ payload: utf8("denied") });
-    await nextError(
+    const denial = await nextError(
       readOnly,
-      (error) => error.code === "Permission",
-      "the Permission error frame",
+      (error) =>
+        error instanceof ServerError && error.type === "PermissionDeniedError",
+      "the PermissionDeniedError frame",
     );
+    expect(denial).toMatchObject({ subType: "PUB", resource: "chat" });
     expect(readOnly.state).toBe("connected");
 
     await readOnly.close();
@@ -242,9 +246,8 @@ describe("celeris messaging, replay and presence through the provider", () => {
     const reference = uniqueChannelReference("presence");
     const claims = allPermissionClaims(reference);
     const watcher = await connectedChannel(reference, claims);
-    const joins: string[] = [];
-    watcher.events().onNotice((notice) => joins.push(text(notice.payload)));
-    watcher.segment("chat").subscribePresence();
+    const watched = watcher.segment("chat");
+    watched.subscribePresence();
     await settle();
 
     const actor = await connectedChannel(reference, {
@@ -252,17 +255,21 @@ describe("celeris messaging, replay and presence through the provider", () => {
       reference: "jsqual-server-actor",
     });
     actor.segment("chat").subscribe();
-    await nextNotice(
-      watcher,
-      () => joins.some((entry) => entry.includes("jsqual-server-actor")),
-      "the actor's presence join notice",
+
+    // Join and leave are a typed, segment-tagged frame, not prose.
+    const join = await nextPresence(
+      watched,
+      (event) => event.joined && event.tokenReference === "jsqual-server-actor",
+      "the actor's presence join event",
       20_000,
     );
+    expect(join.segmentId).toBe("chat");
+    expect(join.connectionId.length).toBeGreaterThan(0);
 
     const page = await watcher
       .segment("chat")
       .presenceList({ page: 1, perPage: 10 });
-    expect(page.total >= 1n).toBe(true);
+    expect(page.total).toBeGreaterThanOrEqual(1);
     expect(
       page.connections.some(
         (connection) => connection.tokenReference === "jsqual-server-actor",
