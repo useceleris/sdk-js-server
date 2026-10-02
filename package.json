@@ -1,7 +1,7 @@
 {
   "name": "@useceleris/server",
-  "version": "0.0.0",
-  "private": true,
+  "version": "0.0.0-beta.1",
+  "private": false,
   "description": "Portable Celeris server SDK foundation",
   "type": "module",
   "sideEffects": false,
@@ -46,7 +46,7 @@
   "dependencies": {
     "@noble/hashes": "2.4.0",
     "@scure/base": "2.4.0",
-    "@useceleris/client": "0.0.0",
+    "@useceleris/client": "^0.0.0-beta.1",
     "zod": "4.5.4"
   },
   "license": "Apache-2.0",
