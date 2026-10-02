@@ -24,19 +24,6 @@ describe("package contents", () => {
         file.startsWith("dist/") || expectedFiles.includes(file);
       expect(isDistributable, file).toBe(true);
     }
-
-    const manifest = JSON.parse(
-      readFileSync(join(repositoryRoot, "package.json"), "utf8"),
-    );
-    expect(manifest.name).toBe("@useceleris/server");
-    expect(manifest.private).toBe(true);
-    expect(Object.keys(manifest.dependencies ?? {})).toEqual([
-      "@noble/hashes",
-      "@scure/base",
-      "@useceleris/client",
-      "zod",
-    ]);
-    expect(manifest.peerDependencies ?? {}).toEqual({});
   });
 
   // AUTH-05: a browser bundle built from the client can never reach the

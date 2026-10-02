@@ -85,8 +85,8 @@ function prepareFixture(temporaryDirectory: string): PackageFixture {
     join(consumerDirectory, "package.json"),
     JSON.stringify({ private: true, type: "module" }),
   );
-  // Install this package's tarball exactly as a consumer would; npm resolves
-  // its @useceleris/client dependency from the registry.
+  // Install this package's tarball exactly as a consumer would; npm installs
+  // its @useceleris/client peer dependency from the registry.
   runNpm(
     [
       "install",

@@ -34,10 +34,12 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "check": "npm run build && npm run typecheck && npm run format:check && npm test",
-    "test:celeris": "vitest run --config vitest.celeris.config.ts"
+    "test:celeris": "vitest run --config vitest.celeris.config.ts",
+    "prepublishOnly": "npm run check"
   },
   "devDependencies": {
     "@types/node": "26.4.1",
+    "@useceleris/client": "0.0.0-beta.1",
     "prettier": "3.9.6",
     "tsdown": "0.23.0",
     "typescript": "7.0.2",
@@ -46,7 +48,6 @@
   "dependencies": {
     "@noble/hashes": "2.4.0",
     "@scure/base": "2.4.0",
-    "@useceleris/client": "^0.0.0-beta.1",
     "zod": "4.5.4"
   },
   "license": "Apache-2.0",
@@ -54,5 +55,8 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/useceleris/sdk-js-server.git"
+  },
+  "peerDependencies": {
+    "@useceleris/client": "0.0.0-beta.1"
   }
 }

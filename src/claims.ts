@@ -1,17 +1,28 @@
 import { z } from "zod";
 
-const identifierSchema = z
+// TextEncoder would silently turn an unpaired surrogate into U+FFFD, so the
+// signed bytes would no longer match what the caller passed. Unicode mode
+// matches only lone surrogates; valid pairs pass.
+const wellFormedStringSchema = z
   .string()
   .min(1, "Must not be empty")
-  .regex(/^[^\r\n]+(?![\s\S])/u, "Must not contain CR or LF");
+  .refine(
+    (value) => !/[\uD800-\uDFFF]/u.test(value),
+    "Must not contain unpaired UTF-16 surrogates",
+  );
 
-const colonFreeIdentifierSchema = z
-  .string()
-  .min(1, "Must not be empty")
-  .regex(/^[^:\r\n]+(?![\s\S])/u, "Must not contain a colon, CR or LF");
+const identifierSchema = wellFormedStringSchema.regex(
+  /^[^\r\n]+(?![\s\S])/u,
+  "Must not contain CR or LF",
+);
+
+const colonFreeIdentifierSchema = wellFormedStringSchema.regex(
+  /^[^:\r\n]+(?![\s\S])/u,
+  "Must not contain a colon, CR or LF",
+);
 
 export const clientIdSchema = colonFreeIdentifierSchema;
-export const signingSecretSchema = z.string().min(1, "Must not be empty");
+export const signingSecretSchema = wellFormedStringSchema;
 export const timestampSchema = z.int().min(1).max(253402300799999);
 
 const lookbackSchema = z.int().min(0).max(4294967295);

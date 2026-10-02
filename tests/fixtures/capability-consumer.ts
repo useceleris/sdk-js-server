@@ -34,7 +34,9 @@ console.log(
   JSON.stringify({
     signedBeforeRemoval,
     code,
-    safeMessage: message === "Signing requires TextEncoder.",
+    safeMessage:
+      message ===
+      "Signing requires TextEncoder, which this runtime does not provide.",
     messageLeaksSecret: message.includes("consumer-signing-secret"),
   }),
 );

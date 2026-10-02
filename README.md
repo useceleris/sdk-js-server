@@ -25,7 +25,7 @@ Supply real credentials only from trusted application configuration. Authenticat
 
 Credentials contain opaque payload/signature strings, not a URL or expiry guarantee. Known server freshness/security findings remain open; see the contract and verification documents.
 
-`createCredentialProvider({ signer, claims })` returns the client SDK's asynchronous `CredentialProvider` for trusted servers that consume realtime themselves: each connection attempt calls `claims(request)` freshly and signs with a fresh timestamp, an aborted `request.signal` rejects before signing, and nothing from the untrusted request widens scope beyond what `claims()` returns. The claims callback decides the `replayLookbackMs → replay` mapping (see [EXAMPLES.md](EXAMPLES.md)). The dependency on `@useceleris/client` is type-only at runtime — the server bundle contains no client transport code — and browsers still never see this package or its secrets. Failures reuse the same errors as the signer; errors are identified by their stable `code` string (`"Configuration"`, `"SigningFailed"`), not by exported classes.
+`createCredentialProvider({ signer, claims })` returns the client SDK's asynchronous `CredentialProvider` for trusted servers that consume realtime themselves: each connection attempt calls `claims(request)` freshly and signs with a fresh timestamp, an aborted `request.signal` rejects before signing, and nothing from the untrusted request widens scope beyond what `claims()` returns. The claims callback decides the `replayLookbackMs → replay` mapping (see [EXAMPLES.md](EXAMPLES.md)). `@useceleris/client` is a peer dependency: npm installs it automatically, and an app that uses both packages shares one copy, so the provider's `CredentialProvider` type always matches the client's. It is type-only at runtime — the server bundle contains no client transport code — and browsers still never see this package or its secrets. Failures reuse the same errors as the signer; errors are identified by their stable `code` string (`"Configuration"`, `"SigningFailed"`), not by exported classes.
 
 ## Examples
 
@@ -48,7 +48,7 @@ The realtime client owns delivery: a publish resolves on local acceptance, not o
 
 ## Development
 
-Use npm and a supported development Node release (Node 24 recommended). Install dependencies using `npm install`; new development dependencies use `npm install --save-dev --save-exact name@latest`; authorized runtime dependencies use `npm install --save-exact name@latest`. Runtime dependencies are Zod for validation, @noble/hashes for HMAC-SHA512, @scure/base for Base64/hex encoding, and @useceleris/client for the credential-provider types (type-only at runtime). Commit npm-generated dependency metadata and lockfile.
+Use npm and a supported development Node release (Node 24 recommended). Install dependencies using `npm install`; new development dependencies use `npm install --save-dev --save-exact name@latest`; authorized runtime dependencies use `npm install --save-exact name@latest`. Runtime dependencies are Zod for validation, @noble/hashes for HMAC-SHA512 and @scure/base for Base64/hex encoding; @useceleris/client is a peer dependency, pinned exactly in both `peerDependencies` and `devDependencies`, for the credential-provider types (type-only at runtime). Commit npm-generated dependency metadata and lockfile.
 
 `@useceleris/client` is an ordinary registry dependency, used for its types. It releases ahead of this package, so a version of it must be published before a matching version of this one.
 

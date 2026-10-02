@@ -70,6 +70,17 @@ test("invalid configuration and claims throw synchronously", () => {
   ).toThrow(expect.objectContaining({ code: "Configuration" }));
 });
 
+test.each(["clientId", "signingSecret"] as const)(
+  "rejects an unpaired surrogate in %s at construction",
+  (option) => {
+    expect(() =>
+      createSigner({ ...signerOptions, [option]: "value\uD800" }),
+    ).toThrow(
+      `Invalid signer options. ${option}: Must not contain unpaired UTF-16 surrogates.`,
+    );
+  },
+);
+
 test("caller mutation after invocation does not change credentials", () => {
   const claims = {
     channels: { kind: "restricted" as const, references: ["room-1"] },

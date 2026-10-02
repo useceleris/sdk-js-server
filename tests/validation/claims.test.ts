@@ -36,6 +36,38 @@ test("accepts letters, digits, hyphens and underscores in channel references", (
   ).toEqual(["room_1-A"]);
 });
 
+test.each([
+  {
+    claim: "permissions.segments[0].segmentId",
+    overrides: {
+      permissions: {
+        kind: "restricted",
+        segments: [{ segmentId: "chat\uD800", read: true, write: false }],
+      },
+    },
+  },
+  { claim: "reference", overrides: { reference: "user\uDC00" } },
+])("rejects an unpaired surrogate in $claim", ({ claim, overrides }) => {
+  expect(() => prepareTestTokenPayload(overrides)).toThrow(
+    `Invalid claims. ${claim}: Must not contain unpaired UTF-16 surrogates.`,
+  );
+});
+
+test("keeps well-formed non-BMP characters in identifiers", () => {
+  expect(
+    prepareTestTokenPayload({
+      reference: "user-😀",
+      permissions: {
+        kind: "restricted",
+        segments: [{ segmentId: "chat-😀", read: true, write: false }],
+      },
+    }),
+  ).toMatchObject({
+    reference: "user-😀",
+    token_permission: [{ segment_id: "chat-😀", read: true, write: false }],
+  });
+});
+
 test("names the failed claim and rule without repeating the input", () => {
   expect(() =>
     prepareTestTokenPayload({
