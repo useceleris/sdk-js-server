@@ -24,4 +24,4 @@ Out of scope: the Celeris service itself, which is reported through the same cha
 
 This is the server package. It holds your signing secret and **must never be bundled into a browser or mobile application**. It signs claims your code decides; it never derives permissions from anything a caller supplied.
 
-Errors raised here carry fixed messages that never echo your secret, your claims or your input.
+Errors raised here name the option or claim that failed and the rule it broke, but never echo your secret, your claims or your input.

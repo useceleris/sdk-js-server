@@ -167,7 +167,8 @@ test("a claims failure surfaces only the fixed safe error", async () => {
   expect(error).toBeInstanceOf(ConnectionError);
   expect(error).toMatchObject({
     code: "Transport",
-    message: "Credential acquisition failed.",
+    message:
+      "Credential acquisition failed: the credential provider threw or rejected.",
   });
   expect((error as Error).cause).toBeUndefined();
   const serialized = JSON.stringify(

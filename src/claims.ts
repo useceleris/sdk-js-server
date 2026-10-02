@@ -2,29 +2,35 @@ import { z } from "zod";
 
 const identifierSchema = z
   .string()
-  .min(1)
-  .regex(/^[^\r\n]+(?![\s\S])/u);
+  .min(1, "Must not be empty")
+  .regex(/^[^\r\n]+(?![\s\S])/u, "Must not contain CR or LF");
 
 const colonFreeIdentifierSchema = z
   .string()
-  .min(1)
-  .regex(/^[^:\r\n]+(?![\s\S])/u);
+  .min(1, "Must not be empty")
+  .regex(/^[^:\r\n]+(?![\s\S])/u, "Must not contain a colon, CR or LF");
 
 export const clientIdSchema = colonFreeIdentifierSchema;
-export const signingSecretSchema = z.string().min(1);
+export const signingSecretSchema = z.string().min(1, "Must not be empty");
 export const timestampSchema = z.int().min(1).max(253402300799999);
 
 const lookbackSchema = z.int().min(0).max(4294967295);
 const channelReferenceSchema = z
   .string()
-  .min(1)
-  .max(255)
-  .regex(/^[a-zA-Z0-9-]+(?![\s\S])/);
+  .min(1, "Must not be empty")
+  .max(255, "Must be at most 255 characters")
+  .regex(
+    /^[a-zA-Z0-9_-]+(?![\s\S])/,
+    "Must contain only ASCII letters, digits, hyphens (-) or underscores (_)",
+  );
 
 const restrictedChannelReferencesSchema = z
   .array(channelReferenceSchema)
-  .min(1)
-  .refine((references) => new Set(references).size === references.length)
+  .min(1, "Must list at least one channel reference")
+  .refine(
+    (references) => new Set(references).size === references.length,
+    "Must not repeat a channel reference",
+  )
   .readonly();
 
 const channelScopeSchema = z
@@ -52,16 +58,17 @@ const segmentPermissionsSchema = z
           (segments) =>
             new Set(segments.map((segment) => segment.segmentId)).size ===
             segments.length,
+          "Must not repeat a segment ID",
         )
         .readonly(),
     }),
   ])
   .readonly();
 
-const replaySchema = z.union([
-  z.boolean(),
-  z.object({ lookbackMs: lookbackSchema }).readonly(),
-]);
+const replaySchema = z.union(
+  [z.boolean(), z.object({ lookbackMs: lookbackSchema }).readonly()],
+  "Must be a boolean or an object with an integer lookbackMs",
+);
 
 export const signingClaimsSchema = z
   .object({

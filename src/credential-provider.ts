@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { CredentialProvider, CredentialRequest } from "@useceleris/client";
 import type { SigningClaims } from "./claims";
 import { ConfigurationError } from "./configuration-error";
+import { describeParseError } from "./parse-error";
 import type { Signer } from "./signer";
 
 type ClaimsCallback = (
@@ -13,8 +14,12 @@ const credentialProviderOptionsSchema = z.strictObject({
     (value) =>
       typeof (value as { sign?: unknown } | null | undefined)?.sign ===
       "function",
+    "Must be an object with a sign() method",
   ),
-  claims: z.custom<ClaimsCallback>((value) => typeof value === "function"),
+  claims: z.custom<ClaimsCallback>(
+    (value) => typeof value === "function",
+    "Must be a function",
+  ),
 });
 
 export type CredentialProviderOptions = z.input<
@@ -32,7 +37,7 @@ export function createCredentialProvider(
 
   if (!parsedOptions.success) {
     throw new ConfigurationError(
-      "Credential provider options must contain a signer and a claims function only.",
+      describeParseError("credential provider options", parsedOptions.error),
     );
   }
 

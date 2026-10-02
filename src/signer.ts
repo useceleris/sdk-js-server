@@ -9,13 +9,17 @@ import {
 } from "./claims";
 
 import { ConfigurationError } from "./configuration-error";
+import { describeParseError } from "./parse-error";
 import { prepareTokenPayload } from "./validation";
 
 const signerOptionsSchema = z.strictObject({
   clientId: clientIdSchema,
   signingSecret: signingSecretSchema,
   clock: z
-    .custom<() => number>((value) => typeof value === "function")
+    .custom<() => number>(
+      (value) => typeof value === "function",
+      "Must be a function",
+    )
     .optional(),
 });
 
@@ -42,7 +46,7 @@ export function createSigner(options: SignerOptions): Signer {
 
   if (!parsedOptions.success) {
     throw new ConfigurationError(
-      "Signer options must contain valid credentials and an optional clock only.",
+      describeParseError("signer options", parsedOptions.error),
     );
   }
 
@@ -53,7 +57,9 @@ export function createSigner(options: SignerOptions): Signer {
       const tokenPayload = prepareTokenPayload(claims, clock);
 
       if (typeof TextEncoder !== "function") {
-        throw new ConfigurationError("Signing requires TextEncoder.");
+        throw new ConfigurationError(
+          "Signing requires TextEncoder, which this runtime does not provide.",
+        );
       }
 
       try {

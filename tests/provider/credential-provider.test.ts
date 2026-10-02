@@ -204,18 +204,30 @@ test("hostile request fields never widen scope beyond the claims result", async 
   expect(payload).not.toHaveProperty("extraChannels");
 });
 
+const signerRule = "signer: Must be an object with a sign() method.";
+const claimsRule = "claims: Must be a function.";
+
 test.each([
-  {},
-  { signer: createSigner(signerOptions) },
-  { claims: () => restrictedClaims },
-  { signer: {}, claims: () => restrictedClaims },
-  { signer: createSigner(signerOptions), claims: "callback" },
+  { options: {}, detail: `${signerRule} ${claimsRule}` },
+  { options: { signer: createSigner(signerOptions) }, detail: claimsRule },
+  { options: { claims: () => restrictedClaims }, detail: signerRule },
   {
-    signer: createSigner(signerOptions),
-    claims: () => restrictedClaims,
-    extra: true,
+    options: { signer: {}, claims: () => restrictedClaims },
+    detail: signerRule,
   },
-])("rejects invalid provider options %#", (options) => {
+  {
+    options: { signer: createSigner(signerOptions), claims: "callback" },
+    detail: claimsRule,
+  },
+  {
+    options: {
+      signer: createSigner(signerOptions),
+      claims: () => restrictedClaims,
+      extra: true,
+    },
+    detail: "Contains an unsupported key.",
+  },
+])("rejects invalid provider options %#", ({ options, detail }) => {
   let error: unknown;
   try {
     createCredentialProvider(options as unknown as CredentialProviderOptions);
@@ -225,16 +237,18 @@ test.each([
 
   expect(error).toMatchObject({
     code: "Configuration",
-    message:
-      "Credential provider options must contain a signer and a claims function only.",
+    message: `Invalid credential provider options. ${detail}`,
   });
   expect((error as Error).cause).toBeUndefined();
-  expect(
-    JSON.stringify(error, Object.getOwnPropertyNames(error as object)),
-  ).not.toContain(signerOptions.signingSecret);
+  const serialized = JSON.stringify(
+    error,
+    Object.getOwnPropertyNames(error as object),
+  );
+  expect(serialized).not.toContain(signerOptions.signingSecret);
+  expect(serialized).not.toContain("extra");
 });
 
-test("invalid claims results surface the signer's fixed safe error", async () => {
+test("invalid claims results surface the signer's configuration error", async () => {
   const provider = createCredentialProvider({
     signer: createSigner(signerOptions),
     claims: () =>

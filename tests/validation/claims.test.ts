@@ -28,6 +28,24 @@ test("constructs exact deny-all payload with explicit defaults", () => {
   ).toEqual(prepareTestTokenPayload());
 });
 
+test("accepts letters, digits, hyphens and underscores in channel references", () => {
+  expect(
+    prepareTestTokenPayload({
+      channels: { kind: "restricted", references: ["room_1-A"] },
+    }).channel_references,
+  ).toEqual(["room_1-A"]);
+});
+
+test("names the failed claim and rule without repeating the input", () => {
+  expect(() =>
+    prepareTestTokenPayload({
+      channels: { kind: "restricted", references: ["room 1"] },
+    }),
+  ).toThrow(
+    "Invalid claims. channels.references[0]: Must contain only ASCII letters, digits, hyphens (-) or underscores (_).",
+  );
+});
+
 test.each([1, 255])("accepts channel length %i", (length) => {
   expect(
     prepareTestTokenPayload({
@@ -43,7 +61,7 @@ test.each(
     ["a", "a"],
     ["a".repeat(256)],
     ["é"],
-    ["a_b"],
+    ["a.b"],
     ["a:b"],
     ["a\n"],
     ["a\r"],
