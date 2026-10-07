@@ -1,86 +1,249 @@
 # @useceleris/server
 
-Portable trusted-server credential signing for Node.js, Bun and Deno, plus the bridge from the signer to `@useceleris/client`'s credential provider. The package remains private.
+[![npm](https://img.shields.io/npm/v/@useceleris/server)](https://www.npmjs.com/package/@useceleris/server)
+[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
+
+Credential signing for Celeris on your trusted server, plus a bridge to [`@useceleris/client`](https://www.npmjs.com/package/@useceleris/client) for backends that connect themselves. Node.js, Bun and Deno.
+
+## How it fits
+
+Your server authenticates the user, decides what they may access (the claims), and signs those claims with your Celeris signing secret. The browser or app fetches the resulting `{ payload, signature }` from your endpoint and hands it to `@useceleris/client`, which connects with it. The secret never leaves your server.
+
+```text
+app ── POST /api/realtime-credentials ──▶ your server: authenticate → authorize → sign
+app ◀── { payload, signature } ──────────
+app ── @useceleris/client ──────────────▶ Celeris
+```
+
+## Install
+
+```sh
+npm install @useceleris/server
+```
+
+Runs on Node.js 22.15+, Bun 1.3+ and Deno 2.5+, on trusted servers only. Signing needs `TextEncoder` and nothing runtime-specific. `@useceleris/client` is a peer dependency used for types only: npm installs it, an app using both packages shares one copy, and this package's bundle contains no client code.
+
+## Sign credentials
 
 ```ts
 import { createSigner } from "@useceleris/server";
 
 const signer = createSigner({
-  clientId: "synthetic-client",
-  signingSecret: "synthetic-secret",
+  clientId: process.env.CELERIS_CLIENT_ID!,
+  signingSecret: process.env.CELERIS_SIGNING_SECRET!,
 });
 
 const credentials = signer.sign({
-  channels: { kind: "restricted", references: ["room-1"] },
+  channels: { kind: "restricted", references: ["room-42"] },
   permissions: {
     kind: "restricted",
-    segments: [{ segmentId: "messages", read: true, write: false }],
+    segments: [{ segmentId: "chat", read: true, write: true }],
   },
+  reference: "user-8317",
+});
+// { payload, signature }: opaque strings, passed to the client unchanged
+```
+
+`createSigner` validates its options at once; they are `clientId` (no colon, CR or LF), `signingSecret` and an optional `clock` returning Unix milliseconds (default `Date.now`, useful in tests), and any other key is rejected. `sign()` is synchronous, stamps the current time and returns the credentials directly. There is nothing to dispose.
+
+## Claims
+
+| Field         | Values                                                                               | Default                     |
+| ------------- | ------------------------------------------------------------------------------------ | --------------------------- |
+| `channels`    | `{ kind: "restricted", references: string[] }` or `{ kind: "all" }`                  | Required                    |
+| `permissions` | `{ kind: "restricted", segments: SegmentClaim[] }` or `{ kind: "all", read, write }` | Required                    |
+| `reference`   | Identity label peers see in message metadata and presence                            | Omitted: the server assigns |
+| `replay`      | `false`, `true` or `{ lookbackMs }`                                                  | `false`                     |
+| `allowEcho`   | Whether the connection receives its own publishes                                    | `false`                     |
+
+- **Channel references** are 1–255 ASCII letters, digits, `-` or `_`; list at least one and none twice. An empty list is rejected, never read as "all".
+- **Segment claims** are `{ segmentId, read, write }` with both flags required; a segment id is non-empty without CR or LF, and none may repeat. An empty restricted list grants nothing. Read access is checked when the connection joins a segment, so a write-only member receives nothing.
+- **The default segment** is joined automatically on connect, but membership grants no access: include `{ segmentId: "default", ... }` to use it.
+- **`reference`** is non-empty without a colon, CR or LF.
+- **`replay`** applies on every segment join: `true` replays what the server still retains for the segment, `{ lookbackMs }` replays only that window (an integer from 0 to 4,294,967,295), and `false` starts from now.
+- Unknown claim keys are stripped. Unrestricted access is always the explicit `kind: "all"`.
+
+```ts
+signer.sign({
+  channels: { kind: "restricted", references: ["room-42", "room-43"] },
+  permissions: {
+    kind: "restricted",
+    segments: [
+      { segmentId: "default", read: true, write: false },
+      { segmentId: "chat", read: true, write: true },
+    ],
+  },
+  reference: "user-8317",
+  replay: { lookbackMs: 30_000 },
+  allowEcho: true,
+});
+
+signer.sign({
+  channels: { kind: "all" },
+  permissions: { kind: "all", read: true, write: false },
 });
 ```
 
-Supply real credentials only from trusted application configuration. Authenticate and authorize users before choosing their claims; never sign arbitrary requested permissions. Channel references allow ASCII letters, digits, hyphens and underscores (1–255 bytes). User/token references must be nonempty and contain no colon or CR/LF. Segment IDs must be nonempty and CR/LF-free. Replay and echo default to false; unrestricted scope requires an explicit `kind: "all"`.
+## A credential endpoint
 
-`createSigner` validates configuration synchronously. `sign(claims)` returns SignedCredentials directly and throws safe Configuration or SigningFailed errors. Signing has no options argument, signal or cancellation behavior. The optional `clock` returns positive Unix milliseconds. Signer configuration accepts only clientId, signingSecret and clock. No disposal or background resources are needed.
+Browsers and mobile apps get credentials from an endpoint like this one. It authenticates the user, authorizes the requested channel, chooses permissions server-side and signs fresh for every request. `authenticate`, `canRead` and `canWrite` stand for your own session and permission checks.
 
-Credentials contain opaque payload/signature strings, not a URL or expiry guarantee. Known server freshness/security findings remain open; see the contract and verification documents.
+```ts
+import { createSigner } from "@useceleris/server";
 
-`createCredentialProvider({ signer, claims })` returns the client SDK's asynchronous `CredentialProvider` for trusted servers that consume realtime themselves: each connection attempt calls `claims(request)` freshly and signs with a fresh timestamp, an aborted `request.signal` rejects before signing, and nothing from the untrusted request widens scope beyond what `claims()` returns. The claims callback decides the `replayLookbackMs → replay` mapping (see [EXAMPLES.md](EXAMPLES.md)). `@useceleris/client` is a peer dependency: npm installs it automatically, and an app that uses both packages shares one copy, so the provider's `CredentialProvider` type always matches the client's. It is type-only at runtime — the server bundle contains no client transport code — and browsers still never see this package or its secrets. Failures reuse the same errors as the signer; errors are identified by their stable `code` string (`"Configuration"`, `"SigningFailed"`), not by exported classes.
+const MAXIMUM_BODY_BYTES = 1_024;
 
-## Examples
+const signer = createSigner({
+  clientId: process.env.CELERIS_CLIENT_ID!,
+  signingSecret: process.env.CELERIS_SIGNING_SECRET!,
+});
 
-Two runnable examples live in [examples/](examples), both executed against a live stack by the celeris test suite:
+// POST /api/realtime-credentials with { channelReference, replayLookbackMs? }
+export async function handleCredentialRequest(
+  request: Request,
+): Promise<Response> {
+  const user = await authenticate(request);
+  if (!user) return Response.json({ error: "sign in" }, { status: 401 });
 
-- [node-quickstart.ts](examples/node-quickstart.ts) — a trusted server signing its own credentials and consuming realtime through `@useceleris/client` (Node.js, Bun and Deno).
-- [credential-endpoint.ts](examples/credential-endpoint.ts) — the framework-neutral pattern every browser or mobile application needs: authenticate your user, derive the authorized claims server-side, sign fresh, return `{ payload, signature }`. A permission requested by the client is never trusted. The handler body ports unchanged to Express, Fastify, Hono, Nitro or a serverless function.
+  // Bounded body: require a declared length within the limit.
+  const declaredBytes = Number(request.headers.get("content-length"));
+  if (!(declaredBytes > 0 && declaredBytes <= MAXIMUM_BODY_BYTES))
+    return Response.json({ error: "invalid body size" }, { status: 413 });
 
-More usage, including the full claims surface, is in [EXAMPLES.md](EXAMPLES.md).
+  let channelReference: unknown;
+  let replayLookbackMs: unknown;
 
-## Trust boundary and credential handling
+  try {
+    ({ channelReference, replayLookbackMs } = await request.json());
+  } catch {
+    return Response.json({ error: "invalid JSON" }, { status: 400 });
+  }
 
-The signing secret belongs only to a trusted server process: never a browser, mobile app, or any bundle shipped to a user. Portable cryptography does not make an environment trusted — this package is importable in a browser bundler, and doing so would leak the secret. The client package never depends on this one, and its published artifact contains no signing API (asserted by the package suite).
+  if (
+    typeof channelReference !== "string" ||
+    !(await canRead(user, channelReference))
+  )
+    return Response.json({ error: "forbidden" }, { status: 403 });
 
-Credentials are short-lived and opaque: sign per request or per connection attempt, never cache, never backdate, and pass `payload`/`signature` through unchanged. Scope every token to the narrowest channel and segment permissions the user actually needs; `kind: "all"` is an explicit opt-in, never a default. The server enforces its own acceptance window, which is not shortened by signing freshly.
+  const credentials = signer.sign({
+    channels: { kind: "restricted", references: [channelReference] },
+    permissions: {
+      kind: "restricted",
+      segments: [
+        {
+          segmentId: "chat",
+          read: true,
+          write: await canWrite(user, channelReference),
+        },
+      ],
+    },
+    reference: user.id,
+    // The request only suggests a lookback; your policy caps it.
+    replay:
+      typeof replayLookbackMs === "number" &&
+      Number.isInteger(replayLookbackMs) &&
+      replayLookbackMs > 0
+        ? { lookbackMs: Math.min(replayLookbackMs, 30_000) }
+        : false,
+  });
 
-## Delivery limits
+  return Response.json(credentials, {
+    headers: { "cache-control": "no-store" },
+  });
+}
+```
 
-The realtime client owns delivery: a publish resolves on local acceptance, not on server receipt, and there is no offline queue, automatic resend, or acknowledgement API. Commands are bounded at 2 MiB each — the server's transport ceiling — with a 64-command writer window; each plan caps publish payloads lower, and the server rejects anything over that cap with a `MessageSizeLimitError`. Received messages are never size-checked. Replay is a bounded lookback window, not a durable cursor, so gaps and duplicates remain possible after recovery and are declared through the client's recovery event. Payloads are opaque bytes — JSON, MessagePack, protobuf or anything else round-trips unchanged.
+The handler takes a standard `Request`, so it mounts as a Next.js route handler (`export const POST = handleCredentialRequest`), a Hono route (`c.req.raw`), or with `Bun.serve` and `Deno.serve`. Where your framework has a body limit (Hono's `bodyLimit`, Express's `express.json({ limit })`), use it instead of the length check. [examples/credential-endpoint.ts](examples/credential-endpoint.ts) is the same pattern on `node:http`.
+
+## A backend that consumes realtime
+
+A trusted server that publishes or subscribes itself connects with `@useceleris/client`. `createCredentialProvider` turns your signer into the client's `credentialProvider`, so it signs locally instead of calling an endpoint:
+
+```ts
+import { createClient, textPayload } from "@useceleris/client";
+import { createCredentialProvider, createSigner } from "@useceleris/server";
+
+const signer = createSigner({
+  clientId: process.env.CELERIS_CLIENT_ID!,
+  signingSecret: process.env.CELERIS_SIGNING_SECRET!,
+});
+
+const client = createClient({
+  credentialProvider: createCredentialProvider({
+    signer,
+    claims: (request) => ({
+      channels: { kind: "restricted", references: ["room-42"] },
+      permissions: {
+        kind: "restricted",
+        segments: [{ segmentId: "chat", read: true, write: true }],
+      },
+      reference: "build-notifier",
+      replay:
+        request.replayLookbackMs === undefined
+          ? false
+          : { lookbackMs: Math.min(request.replayLookbackMs, 30_000) },
+    }),
+  }),
+});
+
+const channel = client.channel("room-42");
+await channel.connect();
+await channel.segment("chat").publish({ payload: textPayload("build passed") });
+await channel.close();
+```
+
+`claims` runs on every connection attempt, the first and each reconnect, and may be async. It is the only authority over scope: nothing from the request reaches the claims unless your callback puts it there. The provider rejects without signing if the attempt's `request.signal` is aborted before or after `claims` runs. Publishing and recovery then behave exactly as in the client documentation.
+
+## Errors
+
+Failures carry a stable `code`. The error classes are not exported, so match on `code`:
+
+| `code`          | Raised when                                                                                                   |
+| --------------- | ------------------------------------------------------------------------------------------------------------- |
+| `Configuration` | Invalid signer options, credential provider options or claims, or a `clock` that throws or returns a bad time |
+| `SigningFailed` | Encoding or HMAC failed while signing                                                                         |
+
+A `Configuration` message names each field that failed and the rule it broke — for example `Invalid claims. channels.references[0]: Must contain only ASCII letters, digits, hyphens (-) or underscores (_).` — and never includes the values, claims or secret.
+
+```ts
+try {
+  signer.sign({
+    channels: { kind: "restricted", references: [] },
+    permissions: { kind: "all", read: true, write: false },
+  });
+} catch (error) {
+  if (
+    error instanceof Error &&
+    "code" in error &&
+    error.code === "Configuration"
+  )
+    console.error(error.message); // "Invalid claims. channels.references: Must list at least one channel reference."
+}
+```
+
+## Trust boundary and keeping the secret
+
+- The signing secret belongs to a trusted server process only — never a browser, mobile app or public environment variable. This package can be bundled for a browser, and doing so would leak the secret; `@useceleris/client` never depends on it and contains no signing code.
+- Use your signing secret, never a client secret. Anyone who holds it can sign credentials for any of your users.
+- Authenticate before signing, authorize every requested channel, and choose permissions server-side. Never sign permissions the client asked for, and treat `replayLookbackMs` as a request your policy caps.
+- Sign fresh for every request and connection attempt; never cache or backdate. Credentials are opaque access material: pass them through unchanged, return them with `Cache-Control: no-store`, and do not log them. The signer sets no expiry and cannot revoke an open connection; the server applies its own acceptance window.
+- Scope each token to the narrowest channels and segments the user needs; `kind: "all"` is an explicit opt-in.
+
+## Further documentation
+
+- Server-side guide: [useceleris.com/docs/sdks/javascript/server](https://useceleris.com/docs/sdks/javascript/server)
+- Authentication guide: [useceleris.com/docs/getting-started/authentication](https://useceleris.com/docs/getting-started/authentication)
+- API reference: [useceleris.com/docs/api-reference/server](https://useceleris.com/docs/api-reference/server)
+- More examples: [EXAMPLES.md](EXAMPLES.md), and runnable programs in [examples/](examples)
 
 ## Development
 
-Use npm and a supported development Node release (Node 24 recommended). Install dependencies using `npm install`; new development dependencies use `npm install --save-dev --save-exact name@latest`; authorized runtime dependencies use `npm install --save-exact name@latest`. Runtime dependencies are Zod for validation, @noble/hashes for HMAC-SHA512 and @scure/base for Base64/hex encoding; @useceleris/client is a peer dependency, pinned exactly in both `peerDependencies` and `devDependencies`, for the credential-provider types (type-only at runtime). Commit npm-generated dependency metadata and lockfile.
+`npm install`, then `npm run check` runs the build, both typechecks, formatting and the local suite. The suite packs this package, installs it into isolated consumers and runs them on Node, Bun and Deno, which must be on `PATH`; [runtime support](docs/runtime-support.md) describes the matrix. `npm run test:celeris` runs the acceptance suites against a real Celeris stack and needs `CELERIS_WS_URL`, `CELERIS_CLIENT_ID` and `CELERIS_SIGNING_SECRET`, read from a gitignored `.env` or the environment.
 
-`@useceleris/client` is an ordinary registry dependency, used for its types. It releases ahead of this package, so a version of it must be published before a matching version of this one.
+`@useceleris/client` is an ordinary registry dependency, pinned exactly in `peerDependencies` and `devDependencies`; it is published before a matching version of this package. Add dependencies with `npm install --save-exact` and commit the lockfile.
 
-```sh
-npm install
-npm run build
-npm run typecheck
-npm run format:check
-npm test
-npm run test:watch
-npm run check
-```
-
-All authored code and test fixtures use `.ts`; tsdown generates package JavaScript and temporary ESM/CJS test consumers.
-
-Tests require Node, Bun and Deno. Missing executables fail qualification. See [runtime support](docs/runtime-support.md) for matrix configuration. Build/test orchestration uses Node; published code does not.
-
-`npm test` builds and packs a fresh artifact of this package, installs it into an isolated consumer exactly as a user would, and checks actual runtime imports. It verifies fixed signing vectors through installed ESM/CommonJS artifacts as well as safe imports. ESM and CommonJS exports include corresponding declarations; internal paths are not public.
-
-## Documents
-
-- [Runtime support](docs/runtime-support.md)
-- [Code readability conventions](docs/code-conventions.md)
-- [Consumer examples](EXAMPLES.md)
-- [Security policy](SECURITY.md)
+Read [CONVENTIONS.md](CONVENTIONS.md) and the [code conventions](docs/code-conventions.md) before contributing, and [SECURITY.md](SECURITY.md) before reporting a vulnerability.
 
 ## License
 
 [Apache 2.0](LICENSE).
-
-Trusted-server signing secrets must never be sent to browsers or end-user applications. Portable cryptographic libraries do not make an environment trusted. No license or publication approval is implied by this private scaffold.
-
-Before completing a change, run automated checks and perform the readability checklist. Test responsibilities are separated into package, declaration, portability and runtime suites; shared helpers remain test-only.
-
-Tests target package-owned behavior. Standalone runtime API probes and build-tool behavior tests are excluded; build and compiler tools are used only to prepare or consume the package.
