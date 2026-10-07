@@ -21,7 +21,7 @@ function authenticate(authorization: string | undefined): User | undefined {
   if (authorization !== "Bearer demo-session") return undefined;
 
   return { id: "user-8317", rooms: ["room-42"], moderator: false };
-}
+} // end function authenticate
 
 // The server decides scope. A moderator may write; everyone else reads.
 function claimsFor(user: User, channelReference: string): SigningClaims {
@@ -37,10 +37,11 @@ function claimsFor(user: User, channelReference: string): SigningClaims {
     reference: user.id, // identity the peers see; no colons or CR/LF
     replay: { lookbackMs: 30_000 },
   };
-}
+} // end function claimsFor
 
 export const server = createServer(async (request, response) => {
   const user = authenticate(request.headers.authorization);
+
   if (!user) {
     response.writeHead(401).end(JSON.stringify({ error: "unauthenticated" }));
     return;
@@ -56,6 +57,7 @@ export const server = createServer(async (request, response) => {
 
   // Authorize the requested channel against what the user may access.
   const channelReference = body.channelReference;
+
   if (
     typeof channelReference !== "string" ||
     !user.rooms.includes(channelReference)

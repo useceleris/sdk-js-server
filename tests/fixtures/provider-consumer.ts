@@ -29,7 +29,7 @@ const provider = createCredentialProvider({
 
 function decodePayload(payload: string): Record<string, unknown> {
   return JSON.parse(atob(payload)) as Record<string, unknown>;
-}
+} // end function decodePayload
 
 async function exerciseProvider(): Promise<unknown> {
   const initial = await provider({
@@ -54,6 +54,7 @@ async function exerciseProvider(): Promise<unknown> {
     signal: abortedController.signal,
   };
   let abortedRejection: unknown;
+
   try {
     await provider(abortedRequest);
   } catch (reason) {
@@ -70,7 +71,7 @@ async function exerciseProvider(): Promise<unknown> {
     signatureLengthsEqual: initial.signature.length > 0,
     abortedRejection,
   };
-}
+} // end function exerciseProvider
 
 // No top-level await: this fixture also compiles to CommonJS.
-exerciseProvider().then((result) => console.log(JSON.stringify(result)));
+void exerciseProvider().then((result) => console.log(JSON.stringify(result)));

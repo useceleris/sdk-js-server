@@ -22,7 +22,9 @@ const colonFreeIdentifierSchema = wellFormedStringSchema.regex(
 );
 
 export const clientIdSchema = colonFreeIdentifierSchema;
+
 export const signingSecretSchema = wellFormedStringSchema;
+
 export const timestampSchema = z.int().min(1).max(253402300799999);
 
 const lookbackSchema = z.int().min(0).max(4294967295);
@@ -92,8 +94,11 @@ export const signingClaimsSchema = z
   .readonly();
 
 export type ChannelScope = z.infer<typeof channelScopeSchema>;
+
 export type SegmentClaim = z.infer<typeof segmentClaimSchema>;
+
 export type SegmentPermissions = z.infer<typeof segmentPermissionsSchema>;
+
 export type SigningClaims = z.input<typeof signingClaimsSchema>;
 
 export type TokenPermission = {

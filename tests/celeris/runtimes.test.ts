@@ -65,6 +65,7 @@ describe("celeris installed artifacts", () => {
         delivered: 1,
         idAssigned: true,
       });
+
       expect(
         result.presentCount,
         `${runtime.name} presence count`,

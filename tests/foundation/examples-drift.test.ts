@@ -51,11 +51,13 @@ test("EXAMPLES.md snippets compile against the public surface", () => {
   ].join("\n");
 
   const directory = mkdtempSync(join(tmpdir(), "celeris-server-examples-"));
+
   try {
     writeFileSync(
       join(directory, "snippets.ts"),
       `${preamble}\n\n${wrappedSnippets.join("\n")}`,
     );
+
     writeFileSync(
       join(directory, "tsconfig.json"),
       JSON.stringify({

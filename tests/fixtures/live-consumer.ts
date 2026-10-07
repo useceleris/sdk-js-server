@@ -10,7 +10,7 @@ function requireEnvironment(name: string): string {
   if (!value) throw new Error(`${name} is not set for the live consumer.`);
 
   return value;
-}
+} // end function requireEnvironment
 
 const reference = `jsqual-server-live-${Date.now()}-${Math.floor(
   Math.random() * 1_000,
@@ -72,7 +72,7 @@ async function exerciseLiveStack(): Promise<unknown> {
     idAssigned: message.id.startsWith("msg_"),
     presentCount: page.total,
   };
-}
+} // end function exerciseLiveStack
 
 exerciseLiveStack().then(
   (result) => console.log(JSON.stringify(result)),

@@ -24,11 +24,13 @@ function packPackage(
   );
   const artifacts = JSON.parse(output) as PackedArtifact[];
   const artifact = artifacts[0];
+
   if (!artifact) {
     throw new Error("npm pack returned no artifact");
   }
+
   return artifact;
-}
+} // end function packPackage
 
 export function compileConsumers(consumerDirectory: string): void {
   function compile(entries: string[], format: "esm" | "cjs"): void {
@@ -57,7 +59,7 @@ export function compileConsumers(consumerDirectory: string): void {
       "--deps.never-bundle",
       "@useceleris/server/dist/index.cjs",
     ]);
-  }
+  } // end function compile
 
   // Keep imports external so consumers exercise the installed tarball.
   compile(
@@ -69,11 +71,12 @@ export function compileConsumers(consumerDirectory: string): void {
     ],
     "esm",
   );
+
   compile(
     ["consumer-require.ts", "signing-consumer.ts", "provider-consumer.ts"],
     "cjs",
   );
-}
+} // end function compileConsumers
 
 function prepareFixture(temporaryDirectory: string): PackageFixture {
   runNpm(["run", "build"]);
@@ -85,6 +88,7 @@ function prepareFixture(temporaryDirectory: string): PackageFixture {
     join(consumerDirectory, "package.json"),
     JSON.stringify({ private: true, type: "module" }),
   );
+
   // Install this package's tarball exactly as a consumer would; npm installs
   // its @useceleris/client peer dependency from the registry.
   runNpm(
@@ -102,7 +106,7 @@ function prepareFixture(temporaryDirectory: string): PackageFixture {
     consumerDirectory,
     packedFiles: artifact.files.map((file) => file.path),
   };
-}
+} // end function prepareFixture
 
 // Each suite owns its temporary install, including cleanup after setup failures.
 export function usePackageFixture(): () => PackageFixture {
@@ -113,6 +117,7 @@ export function usePackageFixture(): () => PackageFixture {
     temporaryDirectory = mkdtempSync(join(tmpdir(), "celeris-server-tests-"));
     fixture = prepareFixture(temporaryDirectory);
   });
+
   afterAll(() => {
     if (temporaryDirectory) {
       rmSync(temporaryDirectory, { recursive: true, force: true });
@@ -123,6 +128,7 @@ export function usePackageFixture(): () => PackageFixture {
     if (!fixture) {
       throw new Error("Package fixture requested before setup completed");
     }
+
     return fixture;
   };
-}
+} // end function usePackageFixture

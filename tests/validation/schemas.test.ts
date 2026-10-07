@@ -23,14 +23,17 @@ test("claims schemas infer optional inputs and readonly parsed defaults", () => 
   expectTypeOf(parsedClaims.replay).toEqualTypeOf<
     boolean | Readonly<{ lookbackMs: number }>
   >();
+
   expectTypeOf<TokenPermission>().toEqualTypeOf<
     Readonly<{ read: boolean; write: boolean }>
   >();
+
   expectTypeOf<TokenPayload["channel_references"]>().toEqualTypeOf<
     readonly string[] | null
   >();
 
   // These unreachable assignments verify readonly guarantees during typecheck.
+  // oxlint-disable-next-line eslint/no-constant-condition
   if (false) {
     // @ts-expect-error Parsed claims are readonly.
     parsedClaims.allowEcho = true;

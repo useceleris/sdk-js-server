@@ -85,6 +85,7 @@ test.each([
 
 test("uses Date.now when no clock supplied", () => {
   const clock = vi.spyOn(Date, "now").mockReturnValue(456);
+
   try {
     expect(prepareTokenPayload(claims).timestamp).toBe(456);
     expect(clock).toHaveBeenCalledTimes(1);
@@ -102,13 +103,16 @@ test("validation and clock errors never expose supplied values or causes", () =>
         throw new Error(marker);
       }),
   ];
+
   for (const operation of operations) {
     let caught: unknown;
+
     try {
       operation();
     } catch (error) {
       caught = error;
     }
+
     expect(caught).toBeInstanceOf(ConfigurationError);
     const error = caught as ConfigurationError;
     expect(error.code).toBe("Configuration");

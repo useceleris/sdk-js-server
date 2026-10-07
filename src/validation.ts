@@ -64,4 +64,4 @@ export function prepareTokenPayload(
         : validatedClaims.replay.lookbackMs,
     allow_echo: validatedClaims.allowEcho,
   };
-}
+} // end function prepareTokenPayload

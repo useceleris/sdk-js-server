@@ -15,6 +15,7 @@ import { createSigner } from "../../../src/signer";
 
 function requireEnvironment(name: string): string {
   const value = process.env[name];
+
   if (!value) {
     throw new Error(
       `${name} is not set. Copy the three CELERIS_* values into a local ` +
@@ -28,10 +29,13 @@ function requireEnvironment(name: string): string {
 } // end function requireEnvironment
 
 export const websocketUrl = () => requireEnvironment("CELERIS_WS_URL");
+
 export const clientId = () => requireEnvironment("CELERIS_CLIENT_ID");
+
 export const signingSecret = () => requireEnvironment("CELERIS_SIGNING_SECRET");
 
 let channelCounter = 0;
+
 export function uniqueChannelReference(label: string): string {
   channelCounter += 1;
 

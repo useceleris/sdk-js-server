@@ -2,7 +2,7 @@ import { afterEach, expect, test, vi } from "vitest";
 import { createSigner, type SignerOptions } from "../../src/signer";
 import { signingVectors } from "../fixtures/signing-vectors";
 
-const vector = signingVectors[0]!;
+const vector = signingVectors[0];
 const signerOptions = {
   clientId: vector.clientId,
   signingSecret: vector.signingSecret,
@@ -32,6 +32,7 @@ test("uses fresh timestamps and changed claims or secrets", () => {
       allowEcho: true,
     }),
   ).not.toEqual(first);
+
   expect(
     createSigner({
       ...signerOptions,
@@ -62,6 +63,7 @@ test("invalid configuration and claims throw synchronously", () => {
   expect(() =>
     createSigner({ ...signerOptions, clock: 1 } as unknown as SignerOptions),
   ).toThrow();
+
   expect(() =>
     createSigner(signerOptions).sign({
       ...vector.claims,
@@ -137,10 +139,11 @@ test("encoding failures omit secrets, claims and raw causes", () => {
     class {
       encode() {
         throw new Error(sensitive);
-      }
+      } // end method encode
     },
   );
   let error: unknown;
+
   try {
     createSigner({ ...signerOptions, signingSecret: sensitive }).sign({
       ...vector.claims,
@@ -149,6 +152,7 @@ test("encoding failures omit secrets, claims and raw causes", () => {
   } catch (caught) {
     error = caught;
   }
+
   expect(error).toBeInstanceOf(Error);
   expect((error as Error).cause).toBeUndefined();
   expect((error as Error).message).toBe("Credential signing failed.");

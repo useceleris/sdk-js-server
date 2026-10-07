@@ -9,7 +9,7 @@ const claims: SigningClaims = {
 
 function prepareTestTokenPayload(overrides: Record<string, unknown> = {}) {
   return prepareTokenPayload({ ...claims, ...overrides }, () => 123);
-}
+} // end function prepareTestTokenPayload
 
 test("constructs exact deny-all payload with explicit defaults", () => {
   expect(prepareTestTokenPayload()).toEqual({
@@ -19,6 +19,7 @@ test("constructs exact deny-all payload with explicit defaults", () => {
     replay: false,
     allow_echo: false,
   });
+
   expect(
     prepareTestTokenPayload({
       reference: undefined,
@@ -137,6 +138,7 @@ test.each([
     replay: false,
     allow_echo: false,
   });
+
   expect(
     prepareTestTokenPayload({
       permissions: {

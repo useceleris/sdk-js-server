@@ -27,7 +27,7 @@ function initialRequest(signal?: AbortSignal): CredentialRequest {
     reason: "initial",
     signal: signal ?? new AbortController().signal,
   };
-}
+} // end function initialRequest
 
 function reconnectRequest(replayLookbackMs: number): CredentialRequest {
   return {
@@ -37,11 +37,11 @@ function reconnectRequest(replayLookbackMs: number): CredentialRequest {
     replayLookbackMs,
     signal: new AbortController().signal,
   };
-}
+} // end function reconnectRequest
 
 function decodePayload(payload: string): Record<string, unknown> {
   return JSON.parse(atob(payload)) as Record<string, unknown>;
-}
+} // end function decodePayload
 
 test("invokes claims freshly per call and signs a fresh timestamp", async () => {
   let now = 1_700_000_000_000;
@@ -92,7 +92,7 @@ test("a pre-aborted request rejects before claims or signing", async () => {
   const provider = createCredentialProvider({
     signer: { sign },
     claims,
-  } as unknown as CredentialProviderOptions);
+  });
 
   await expect(provider(initialRequest(controller.signal))).rejects.toBe(
     "synthetic-abort-reason",
@@ -110,7 +110,7 @@ test("an abort during asynchronous claims rejects before signing", async () => {
       controller.abort("synthetic-mid-flight-abort");
       return restrictedClaims;
     },
-  } as unknown as CredentialProviderOptions);
+  });
 
   await expect(provider(initialRequest(controller.signal))).rejects.toBe(
     "synthetic-mid-flight-abort",
@@ -178,7 +178,7 @@ test("a claims rejection propagates unchanged without signing", async () => {
     claims: async () => {
       throw failure;
     },
-  } as unknown as CredentialProviderOptions);
+  });
 
   await expect(provider(initialRequest())).rejects.toBe(failure);
   expect(sign).not.toHaveBeenCalled();
@@ -229,6 +229,7 @@ test.each([
   },
 ])("rejects invalid provider options %#", ({ options, detail }) => {
   let error: unknown;
+
   try {
     createCredentialProvider(options as unknown as CredentialProviderOptions);
   } catch (caught) {
@@ -240,10 +241,7 @@ test.each([
     message: `Invalid credential provider options. ${detail}`,
   });
   expect((error as Error).cause).toBeUndefined();
-  const serialized = JSON.stringify(
-    error,
-    Object.getOwnPropertyNames(error as object),
-  );
+  const serialized = JSON.stringify(error, Object.getOwnPropertyNames(error));
   expect(serialized).not.toContain(signerOptions.signingSecret);
   expect(serialized).not.toContain("extra");
 });

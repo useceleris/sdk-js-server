@@ -23,6 +23,7 @@ Object.defineProperty(globalThis, "TextEncoder", {
 
 let code: unknown;
 let message = "";
+
 try {
   signer.sign(claims);
 } catch (error) {

@@ -49,6 +49,7 @@ void credentials;
 void provider;
 `,
     );
+
     writeFileSync(
       configuration,
       JSON.stringify({

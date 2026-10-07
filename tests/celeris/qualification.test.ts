@@ -201,6 +201,7 @@ describe("celeris messaging, replay and presence through the provider", () => {
     for (const body of ["one", "two", "three"]) {
       await publisher.segment("history").publish({ payload: utf8(body) });
     }
+
     await nextMessage(
       liveReceiver.segment("history"),
       () => liveIds.length >= 3,
@@ -234,6 +235,7 @@ describe("celeris messaging, replay and presence through the provider", () => {
     const replayedByBody = new Map(
       replayed.map((message) => [text(message.payload), message.messageId]),
     );
+
     for (const [index, body] of ["one", "two", "three"].entries()) {
       expect(replayedByBody.get(body)).toBe(liveIds[index]);
     }

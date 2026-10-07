@@ -238,7 +238,7 @@ try {
 
 ## Development
 
-`npm install`, then `npm run check` runs the build, both typechecks, formatting and the local suite. The suite packs this package, installs it into isolated consumers and runs them on Node, Bun and Deno, which must be on `PATH`; [runtime support](docs/runtime-support.md) describes the matrix. `npm run test:celeris` runs the acceptance suites against a real Celeris stack and needs `CELERIS_WS_URL`, `CELERIS_CLIENT_ID` and `CELERIS_SIGNING_SECRET`, read from a gitignored `.env` or the environment.
+`npm install`, then `npm run check` runs the build, both typechecks, oxlint, Prettier and the local suite. The suite packs this package, installs it into isolated consumers and runs them on Node, Bun and Deno, which must be on `PATH`; [runtime support](docs/runtime-support.md) describes the matrix. `npm run test:celeris` runs the acceptance suites against a real Celeris stack and needs `CELERIS_WS_URL`, `CELERIS_CLIENT_ID` and `CELERIS_SIGNING_SECRET`, read from a gitignored `.env` or the environment.
 
 `@useceleris/client` is an ordinary registry dependency, pinned exactly in `peerDependencies` and `devDependencies`; it is published before a matching version of this package. Add dependencies with `npm install --save-exact` and commit the lockfile.
 

@@ -45,11 +45,13 @@ export function createCredentialProvider(
 
   return async (request: CredentialRequest) => {
     request.signal.throwIfAborted();
+
     const signingClaims = await claims(request);
+
     // A cancellation that landed while claims() ran still rejects before
     // signing; the abort reason propagates for the client to sanitize.
     request.signal.throwIfAborted();
 
     return signer.sign(signingClaims);
   };
-}
+} // end function createCredentialProvider

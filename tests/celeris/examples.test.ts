@@ -37,7 +37,7 @@ function compileExample(name: string, consumerDirectory: string): void {
     "--deps.never-bundle",
     "@useceleris/client",
   ]);
-}
+} // end function compileExample
 
 beforeAll(() => {
   const { consumerDirectory } = getFixture();
@@ -81,6 +81,7 @@ describe("celeris examples", () => {
         CELERIS_SIGNING_SECRET: signingSecret(),
       },
     });
+
     await new Promise<void>((resolve, reject) => {
       endpoint!.stdout?.on("data", (chunk: Buffer) => {
         if (chunk.toString().includes("listening")) resolve();
@@ -101,6 +102,7 @@ describe("celeris examples", () => {
       (await request("Bearer wrong", { channelReference: endpointChannel }))
         .status,
     ).toBe(401);
+
     expect(
       (await request("Bearer demo-session", { channelReference: "other-room" }))
         .status,

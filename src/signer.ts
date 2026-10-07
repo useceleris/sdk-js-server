@@ -24,6 +24,7 @@ const signerOptionsSchema = z.strictObject({
 });
 
 export type SignerOptions = z.input<typeof signerOptionsSchema>;
+
 export type SignedCredentials = {
   readonly payload: string;
   readonly signature: string;
@@ -35,11 +36,12 @@ export type Signer = {
 
 class SigningFailedError extends Error {
   readonly code = "SigningFailed";
+
   constructor() {
     super("Credential signing failed.");
     this.name = "SigningFailedError";
-  }
-}
+  } // end constructor
+} // end class SigningFailedError
 
 export function createSigner(options: SignerOptions): Signer {
   const parsedOptions = signerOptionsSchema.safeParse(options);
@@ -82,6 +84,6 @@ export function createSigner(options: SignerOptions): Signer {
       } catch {
         throw new SigningFailedError();
       }
-    },
+    }, // end method sign
   };
-}
+} // end function createSigner

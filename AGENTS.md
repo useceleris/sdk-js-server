@@ -13,7 +13,7 @@ The protocol contract, the recorded decisions this package's API traces to, and 
 - Do not introduce deprecated APIs in source, tests, fixtures or tooling. Check installed type declarations and official migration guidance when choosing or replacing APIs; use supported replacements instead of suppressing deprecation warnings. Include deprecation checks in code review. For Vitest exception assertions, use `toThrow`, not the deprecated `toThrowError` alias.
 - Keep real credentials out of fixtures, errors and logs.
 - Keep the server → client dependency direction; add the client dependency only in S4. Other repositories remain read-only unless separately authorized.
-- Run `npm run check` with the full runtime matrix before marking qualification complete. Do not publish this private foundation package.
+- Run `npm run check` with the full runtime matrix before marking qualification complete. It runs the build, both typechecks, oxlint (`npm run lint`: correctness and type-aware typescript rules, plus the house layout: a blank line after every closing block and around top-level declarations, and an end marker such as `} // end method connect` on every multi-line function, method and class), Prettier (`npm run format:check`) and the local suite. Do not publish this private foundation package.
 
 ## Required readability gate
 

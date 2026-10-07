@@ -32,12 +32,13 @@ class CountingWebSocket {
   static constructed = 0;
   constructor() {
     CountingWebSocket.constructed += 1;
-  }
+  } // end constructor
+
   addEventListener(): void {}
   removeEventListener(): void {}
   close(): void {}
   send(): void {}
-}
+} // end class CountingWebSocket
 
 beforeEach(() => {
   CountingWebSocket.constructed = 0;
@@ -66,6 +67,7 @@ function createChannelHarness(
   // Wrapping only to observe when the provider settles: the post-claims
   // path is microtask-only, so awaiting this needs no timers.
   let settled: Promise<void> = Promise.resolve();
+
   const credentialProvider: CredentialProvider = (request) => {
     const call = provider(request);
     settled = call.then(
@@ -89,7 +91,7 @@ function createChannelHarness(
     countSigns: () => signCalls,
     providerSettled: () => settled,
   };
-}
+} // end function createChannelHarness
 
 function gatedClaims() {
   let releaseClaims!: (claims: SigningClaims) => void;
@@ -104,7 +106,7 @@ function gatedClaims() {
     });
 
   return { claims, started, release: () => releaseClaims(restrictedClaims) };
-}
+} // end function gatedClaims
 
 test("close during pending claims cancels and suppresses late completion", async () => {
   const gate = gatedClaims();
@@ -171,10 +173,7 @@ test("a claims failure surfaces only the fixed safe error", async () => {
       "Credential acquisition failed: the credential provider threw or rejected.",
   });
   expect((error as Error).cause).toBeUndefined();
-  const serialized = JSON.stringify(
-    error,
-    Object.getOwnPropertyNames(error as object),
-  );
+  const serialized = JSON.stringify(error, Object.getOwnPropertyNames(error));
   expect(serialized).not.toContain(signerOptions.signingSecret);
   expect(serialized).not.toContain("synthetic-reason-marker");
   expect(harness.channel.state).toBe("failed");

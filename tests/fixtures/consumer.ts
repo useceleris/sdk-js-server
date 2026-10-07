@@ -5,6 +5,7 @@ const server = await import("@useceleris/server");
 
 const privatePath = "@useceleris/server/dist/index.js";
 let privatePathBlocked = false;
+
 try {
   await import(privatePath);
 } catch {

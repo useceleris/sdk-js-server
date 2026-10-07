@@ -37,5 +37,5 @@ jobs:
       # @useceleris/client resolves from the registry like any other
       # dependency; it publishes ahead of this package.
       - run: npm install
-      # Build, both typechecks, formatting and the suites.
+      # Build, both typechecks, lint, formatting and the suites.
       - run: npm run check

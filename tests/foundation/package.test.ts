@@ -41,6 +41,7 @@ describe("package contents", () => {
 
     for (const bundle of ["dist/index.js", "dist/index.cjs"]) {
       const contents = readFileSync(join(clientRoot, bundle), "utf8");
+
       for (const marker of [
         "@useceleris/server",
         "createSigner",

@@ -78,6 +78,7 @@ for (const runtime of readRuntimeMatrix()) {
           ),
         ).toEqual(signingVectors.map((vector) => vector.expected));
       });
+
       test("loads packed CommonJS without import side effects", () => {
         const { consumerDirectory } = getFixture();
         const result = runConsumer(
@@ -90,6 +91,7 @@ for (const runtime of readRuntimeMatrix()) {
           privatePathBlocked: true,
         });
       });
+
       test("bridges the signer to the client provider contract (CommonJS)", () => {
         expect(
           runConsumer(
