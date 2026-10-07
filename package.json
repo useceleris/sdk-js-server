@@ -1,6 +1,6 @@
 {
   "name": "@useceleris/server",
-  "version": "0.0.0-beta.2",
+  "version": "1.0.0",
   "private": false,
   "description": "Portable Celeris server SDK foundation",
   "type": "module",
