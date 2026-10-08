@@ -66,16 +66,20 @@ describe("celeris server-signed credentials", () => {
     });
   });
 
-  it("rejects expired and future clocks; accepts inside the observed window", async () => {
+  // D-001: the server accepts a signed timestamp that is at most 60 seconds old
+  // and not in the future.
+  it("rejects timestamps outside the 60-second window; accepts one inside it", async () => {
     const reference = uniqueChannelReference("window");
     const claims = allPermissionClaims(reference);
 
-    const expired = qualificationClient(claims, {
-      clock: () => Date.now() - 61 * 60 * 1_000,
-    }).channel(reference);
-    await expect(expired.connect()).rejects.toMatchObject({
-      code: "Transport",
-    });
+    for (const ageMs of [61 * 1_000, 59 * 60 * 1_000]) {
+      const expired = qualificationClient(claims, {
+        clock: () => Date.now() - ageMs,
+      }).channel(reference);
+      await expect(expired.connect()).rejects.toMatchObject({
+        code: "Transport",
+      });
+    }
 
     const future = qualificationClient(claims, {
       clock: () => Date.now() + 5 * 60 * 1_000,
@@ -84,14 +88,11 @@ describe("celeris server-signed credentials", () => {
       code: "Transport",
     });
 
-    // D-001: the server accepts up to the observed 60-minute window against
-    // a documented 60-second intent — recorded, not relied upon. A fresh
-    // signer timestamp never shortens server acceptance (S2.4).
-    const stale = qualificationClient(claims, {
-      clock: () => Date.now() - 59 * 60 * 1_000,
+    const recent = qualificationClient(claims, {
+      clock: () => Date.now() - 30 * 1_000,
     }).channel(reference);
-    await stale.connect();
-    await stale.close();
+    await recent.connect();
+    await recent.close();
   });
 
   it("enforces the token's channel restriction", async () => {
