@@ -112,7 +112,9 @@ describe("celeris server-signed credentials", () => {
 });
 
 describe("celeris messaging, replay and presence through the provider", () => {
-  it("round-trips a binary payload with a server-assigned id and no self-echo", async () => {
+  // The message id is the caller's own, so this suite does not depend on how
+  // the installed client generates ids; the client's own suite checks those.
+  it("round-trips a binary payload with its message id and no self-echo", async () => {
     const reference = uniqueChannelReference("msg");
     const claims = allPermissionClaims(reference);
     const publisher = await connectedChannel(reference, claims);
@@ -125,14 +127,17 @@ describe("celeris messaging, replay and presence through the provider", () => {
     receiver.segment("chat").subscribe();
     await settle();
 
-    await publisher.segment("chat").publish({ payload: utf8("hello-서버") });
+    const messageId = `${reference}_hello`;
+    await publisher
+      .segment("chat")
+      .publish({ payload: utf8("hello-서버"), messageId });
     const message = await nextMessage(
       receiver.segment("chat"),
       () => true,
       "cross-connection delivery",
     );
 
-    expect(message.messageId).toMatch(/^msg_/);
+    expect(message.messageId).toBe(messageId);
     expect(text(message.payload)).toBe("hello-서버");
     await settle();
     expect(publisherSaw).toHaveLength(0);
@@ -150,13 +155,14 @@ describe("celeris messaging, replay and presence through the provider", () => {
     channel.segment("chat").subscribe();
     await settle();
 
-    await channel.segment("chat").publish({ payload: utf8("self") });
+    const messageId = `${reference}_self`;
+    await channel.segment("chat").publish({ payload: utf8("self"), messageId });
     const echoed = await nextMessage(
       channel.segment("chat"),
       (message) => text(message.payload) === "self",
       "an echoed publish",
     );
-    expect(echoed.messageId).toMatch(/^msg_/);
+    expect(echoed.messageId).toBe(messageId);
 
     await channel.close();
   });

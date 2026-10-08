@@ -58,8 +58,13 @@ async function exerciseLiveStack(): Promise<unknown> {
   chat.subscribe();
   await new Promise((resolve) => setTimeout(resolve, 1_500));
 
+  // The caller's own id, so the result does not depend on how the installed
+  // client generates ids.
+  const messageId = `live_consumer_${Date.now()}`;
+
   await chat.publish({
     payload: new TextEncoder().encode("live-consumer"),
+    messageId,
   });
   const message = await delivery;
 
@@ -69,7 +74,7 @@ async function exerciseLiveStack(): Promise<unknown> {
   return {
     ok: message.body === "live-consumer" && message.id.length > 0,
     delivered: 1,
-    idAssigned: message.id.startsWith("msg_"),
+    idKept: message.id === messageId,
     presentCount: page.total,
   };
 } // end function exerciseLiveStack

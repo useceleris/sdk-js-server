@@ -63,7 +63,7 @@ describe("celeris installed artifacts", () => {
       expect(result, `${runtime.name} live consumer`).toMatchObject({
         ok: true,
         delivered: 1,
-        idAssigned: true,
+        idKept: true,
       });
 
       expect(
