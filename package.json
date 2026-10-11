@@ -1,6 +1,6 @@
 {
   "name": "@useceleris/server",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "private": false,
   "description": "Portable Celeris server SDK foundation",
   "type": "module",
@@ -41,7 +41,7 @@
   "devDependencies": {
     "@stylistic/eslint-plugin": "5.10.0",
     "@types/node": "26.4.1",
-    "@useceleris/client": "1.1.0",
+    "@useceleris/client": "1.1.1",
     "oxlint": "1.87.0",
     "oxlint-tsgolint": "7.0.2003",
     "prettier": "3.9.6",
@@ -62,6 +62,6 @@
     "url": "git+https://github.com/useceleris/sdk-js-server.git"
   },
   "peerDependencies": {
-    "@useceleris/client": "^1.1.0"
+    "@useceleris/client": "^1.1.1"
   }
 }
