@@ -57,7 +57,7 @@ const credentials = signer.sign({
 | `allowEcho`   | Whether the connection receives its own publishes                                    | `false`                     |
 
 - **Channel references** are 1–255 ASCII letters, digits, `-` or `_`; list at least one and none twice. An empty list is rejected, never read as "all".
-- **Segment claims** are `{ segmentId, read, write }` with both flags required; a segment id is non-empty without CR or LF, and none may repeat. An empty restricted list grants nothing. Read access is checked when the connection joins a segment, so a write-only member receives nothing.
+- **Segment claims** are `{ segmentId, read, write }` with both flags required; a segment id is non-empty without CR or LF, and none may repeat. An empty restricted list grants nothing. A subscription needs `read` and a publish needs `write`: a write-only token publishes and cannot subscribe, and a read-only token subscribes and cannot publish.
 - **The default segment** is joined automatically on connect, but membership grants no access: include `{ segmentId: "default", ... }` to use it.
 - **`reference`** is non-empty without a colon, CR or LF.
 - **`replay`** applies on every segment join: `true` replays what the server still retains for the segment, `{ lookbackMs }` replays only that window (an integer from 0 to 4,294,967,295), and `false` starts from now.
