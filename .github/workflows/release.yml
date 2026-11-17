@@ -1,0 +1,47 @@
+name: Release
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+# Only one server package version may be staged at a time.
+concurrency:
+  group: server-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    # A maintainer starts this workflow manually, from the release branch only.
+    if: github.ref == 'refs/heads/release'
+    # npm trusted publishing requires a GitHub-hosted runner.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          registry-url: https://registry.npmjs.org
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: latest
+
+      - run: npm ci
+
+      # Build, both typechecks, lint, formatting and the package-consumer suite.
+      - run: npm run check
+
+      # npm exchanges the GitHub OIDC identity for a short-lived credential.
+      # This uploads a reviewable stage; it does not publish a live npm version.
+      - name: Stage package
+        run: npm stage publish --access public
